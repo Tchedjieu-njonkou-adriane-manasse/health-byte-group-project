@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_records.html" import records_tables %}
+{% block title %}{{ patient.full_name }} — HealthByte{% endblock %}
+{% block content %}
+<div class="card-header">
+  <h1>{{ patient.full_name }}</h1>
+  <div class="btn-row">
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('doctor_dashboard') }}">← Back to search</a>
+    <a class="btn btn-amber btn-sm" href="{{ url_for('verify_integrity', patient_code=patient.patient_code) }}">Verify integrity</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Patient profile</h2>
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('edit_patient', patient_code=patient.patient_code) }}">Update information</a>
+  </div>
+  <div class="grid-3" style="margin-bottom:16px;">
+    <div class="stat"><div class="label">Patient ID</div><div class="value">{{ patient.patient_code }}</div></div>
+    <div class="stat"><div class="label">Blood group</div><div class="value">{{ patient.blood_group or "—" }}</div></div>
+    <div class="stat"><div class="label">Genotype</div><div class="value">{{ patient.genotype or "—" }}</div></div>
+  </div>
+  <div class="field-list">
+    <div class="field-row"><div class="k">Date of birth</div><div class="v">{{ patient.date_of_birth or "—" }}</div></div>
+    <div class="field-row"><div class="k">Sex</div><div class="v">{{ patient.sex or "—" }}</div></div>
+    <div class="field-row"><div class="k">Contact info</div><div class="v">{{ patient.contact_info or "—" }}</div></div>
+    <div class="field-row"><div class="k">Address</div><div class="v">{{ patient.address or "—" }}</div></div>
+    <div class="field-row"><div class="k">Emergency contact</div><div class="v">{{ patient.emergency_contact_name or "—" }}{% if patient.emergency_contact_phone %} · {{ patient.emergency_contact_phone }}{% endif %}</div></div>
+    <div class="field-row"><div class="k">Allergies</div><div class="v">{{ patient.allergies or "—" }}</div></div>
+    <div class="field-row"><div class="k">Chronic conditions</div><div class="v">{{ patient.chronic_conditions or "—" }}</div></div>
+    <div class="field-row"><div class="k">Medical history</div><div class="v">{{ patient.medical_history or "—" }}</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>Add to record</h2></div>
+  <div class="btn-row">
+    <a class="btn btn-primary btn-sm" href="{{ url_for('add_consultation', patient_code=patient.patient_code) }}">+ Consultation</a>
+    <a class="btn btn-primary btn-sm" href="{{ url_for('add_prescription', patient_code=patient.patient_code) }}">+ Prescription</a>
+    <a class="btn btn-primary btn-sm" href="{{ url_for('add_lab_result', patient_code=patient.patient_code) }}">+ Lab result</a>
+  </div>
+</div>
+
+{{ records_tables(consultations, prescriptions, labs) }}
+{% endblock %}
