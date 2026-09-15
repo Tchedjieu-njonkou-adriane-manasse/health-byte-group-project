@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}HealthByte{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="topbar">
+    <div class="shell">
+      <a class="brand" href="{{ url_for('index') }}">
+        <span class="brand-mark">H</span> HEALTHBYTE
+      </a>
+      <div class="nav-links">
+        {% if current_user %}
+          {% if current_user.role == 'patient' %}
+            <a href="{{ url_for('patient_dashboard') }}">Dashboard</a>
+            {% if current_profile %}
+              <a href="{{ url_for('verify_integrity', patient_code=current_profile.patient_code) }}">Verify Integrity</a>
+            {% endif %}
+          {% else %}
+            <a href="{{ url_for('doctor_dashboard') }}">Dashboard</a>
+          {% endif %}
+          {% if current_profile %}
+            <span class="pill-badge">{{ 'Patient ID: ' + current_profile.patient_code if current_user.role == 'patient' else 'Doctor ID: ' + current_profile.doctor_code }}</span>
+          {% endif %}
+          <a href="{{ url_for('logout') }}">Log out</a>
+        {% else %}
+          <a href="{{ url_for('login') }}">Log in</a>
+          <a class="btn btn-primary btn-sm" href="{{ url_for('signup') }}">Sign up</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="shell page">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flash-list">
+          {% for category, message in messages %}
+            <li class="flash flash-{{ category }}">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </div>
+
+  <footer class="site-footer">
+    <div class="shell">HealthByte — records secured with a SHA-256 hash-chain ledger.</div>
+  </footer>
+</body>
+</html>
