@@ -2,7 +2,6 @@ from functools import wraps
 from flask import session, redirect, url_for, flash, g
 from database import get_db
 
-
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
@@ -11,7 +10,6 @@ def login_required(view):
             return redirect(url_for("login"))
         return view(*args, **kwargs)
     return wrapped
-
 
 def role_required(role):
     def decorator(view):
@@ -26,7 +24,6 @@ def role_required(role):
             return view(*args, **kwargs)
         return wrapped
     return decorator
-
 
 def next_code(db, table, column, prefix):
     """Generate the next human-friendly code, e.g. HB-PT-0001, HB-PT-0002 ..."""
