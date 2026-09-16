@@ -6,7 +6,7 @@
     <h2>{{ "Update clinical information" if for_doctor else "Edit my profile" }}</h2>
   </div>
 
-  
+  {% if for_doctor %}
   <p class="hint" style="margin-top:-8px;">
     Identity and contact details belong to the patient and can only be changed by
     them — shown below for reference only. You can update the clinical fields.
@@ -96,4 +96,4 @@
     </div>
   </form>
 </div>
-
+{% endblock %}
