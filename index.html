@@ -1,0 +1,48 @@
+
+
+{% block content %}
+<div class="hero">
+  <h1>Your medical record, in one place — and always yours to control.</h1>
+  <p class="lead">HealthByte keeps one lifelong health record for every patient. Doctors
+    can request access to add consultations, prescriptions and lab results — but only
+    once you approve them. Every update is logged automatically, so there's always a
+    clear, checkable history of what changed and when.</p>
+  <div class="btn-row">
+    <a class="btn btn-primary" href="{{ url_for('signup') }}">Create an account</a>
+    <a class="btn btn-ghost" href="{{ url_for('login') }}">Log in</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>How it works</h2></div>
+  <div class="grid-3">
+    <div class="stat">
+      <div class="label">Step 1</div>
+      <div class="v" style="margin-top:6px;">Sign up as a patient or a doctor.</div>
+    </div>
+    <div class="stat">
+      <div class="label">Step 2</div>
+      <div class="v" style="margin-top:6px;">A doctor requests access to your record — you choose to approve or decline.</div>
+    </div>
+    <div class="stat">
+      <div class="label">Step 3</div>
+      <div class="v" style="margin-top:6px;">Every update is recorded and can be checked for accuracy at any time.</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-3">
+  <div class="card">
+    <h3>For patients</h3>
+    <p>Your ID, history, allergies, consultations, prescriptions and lab results — all in one place, shared only with doctors you approve.</p>
+  </div>
+  <div class="card">
+    <h3>For doctors</h3>
+    <p>Search any patient by ID or name, request access, and once approved, review their full history and log new consultations, prescriptions and lab results in seconds.</p>
+  </div>
+  <div class="card">
+    <h3>Always verifiable</h3>
+    <p>Every change to a record is logged the moment it happens. Verify Integrity checks that history against what's stored, so you can always confirm nothing was quietly altered.</p>
+  </div>
+</div>
+
