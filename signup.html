@@ -140,6 +140,37 @@
   </div>
 </div>
 
+<script>
+  const patientFields = document.getElementById('patient-fields');
+  const doctorFields = document.getElementById('doctor-fields');
+  const optPatient = document.getElementById('opt-patient');
+  const optDoctor = document.getElementById('opt-doctor');
+  const radios = document.querySelectorAll('input[name="role"]');
 
+  function sync() {
+    const isPatient = document.querySelector('input[name="role"]:checked').value === 'patient';
+    patientFields.style.display = isPatient ? '' : 'none';
+    doctorFields.style.display = isPatient ? 'none' : '';
+    optPatient.classList.toggle('active', isPatient);
+    optDoctor.classList.toggle('active', !isPatient);
+
+    patientFields.querySelectorAll('[required]').forEach(el => el.disabled = !isPatient);
+    doctorFields.querySelectorAll('[required]').forEach(el => el.disabled = isPatient);
+  }
+  radios.forEach(r => r.addEventListener('change', sync));
+  sync();
+
+  function wireToggle(toggleId, inputId) {
+    const toggle = document.getElementById(toggleId);
+    const input = document.getElementById(inputId);
+    toggle.addEventListener('click', () => {
+      const isHidden = input.type === 'password';
+      input.type = isHidden ? 'text' : 'password';
+      toggle.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+    });
+  }
+  wireToggle('toggle-password', 'password');
+  wireToggle('toggle-confirm', 'confirm_password');
+</script>
 {% endblock %}
 
