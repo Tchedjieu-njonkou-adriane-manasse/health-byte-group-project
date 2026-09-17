@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Edit record — HealthByte{% endblock %}
+{% block content %}
+<div class="card" style="max-width:760px; margin:0 auto;">
+  <div class="card-header">
+    <h2>{{ "Update clinical information" if for_doctor else "Edit my profile" }}</h2>
+  </div>
+
+  {% if for_doctor %}
+  <p class="hint" style="margin-top:-8px;">
+    Identity and contact details belong to the patient and can only be changed by
+    them — shown below for reference only. You can update the clinical fields.
+  </p>
+  <div class="field-list" style="margin-bottom: 24px;">
+    <div class="field-row"><div class="k">Full name</div><div class="v">{{ patient.full_name }}</div></div>
+    <div class="field-row"><div class="k">Date of birth</div><div class="v">{{ patient.date_of_birth or "—" }}</div></div>
+    <div class="field-row"><div class="k">Sex</div><div class="v">{{ patient.sex or "—" }}</div></div>
+    <div class="field-row"><div class="k">Contact info</div><div class="v">{{ patient.contact_info or "—" }}</div></div>
+    <div class="field-row"><div class="k">Address</div><div class="v">{{ patient.address or "—" }}</div></div>
+    <div class="field-row"><div class="k">Emergency contact</div><div class="v">{{ patient.emergency_contact_name or "—" }}{% if patient.emergency_contact_phone %} · {{ patient.emergency_contact_phone }}{% endif %}</div></div>
+  </div>
+  {% endif %}
+
+  <form method="post">
+    <div class="form-grid">
+      {% if not for_doctor %}
+      <div class="field">
+        <label for="full_name">Full name</label>
+        <input type="text" id="full_name" name="full_name" value="{{ patient.full_name }}" required>
+      </div>
+      <div class="field">
+        <label for="date_of_birth">Date of birth</label>
+        <input type="date" id="date_of_birth" name="date_of_birth" value="{{ patient.date_of_birth or '' }}">
+      </div>
+      <div class="field">
+        <label for="sex">Sex</label>
+        <select id="sex" name="sex">
+          <option value="">Select…</option>
+          {% for s in ["Female","Male","Other"] %}
+          <option {{ "selected" if patient.sex == s }}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="contact_info">Contact info</label>
+        <input type="text" id="contact_info" name="contact_info" value="{{ patient.contact_info or '' }}">
+      </div>
+      <div class="field">
+        <label for="address">Address</label>
+        <input type="text" id="address" name="address" value="{{ patient.address or '' }}">
+      </div>
+      <div class="field">
+        <label for="emergency_contact_name">Emergency contact name</label>
+        <input type="text" id="emergency_contact_name" name="emergency_contact_name" value="{{ patient.emergency_contact_name or '' }}">
+      </div>
+      <div class="field">
+        <label for="emergency_contact_phone">Emergency contact phone</label>
+        <input type="text" id="emergency_contact_phone" name="emergency_contact_phone" value="{{ patient.emergency_contact_phone or '' }}">
+      </div>
+      {% endif %}
+
+      <div class="field">
+        <label for="blood_group">Blood group</label>
+        <select id="blood_group" name="blood_group">
+          <option value="">Select…</option>
+          {% for bg in ["O+","O-","A+","A-","B+","B-","AB+","AB-"] %}
+          <option {{ "selected" if patient.blood_group == bg }}>{{ bg }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="genotype">Genotype</label>
+        <select id="genotype" name="genotype">
+          <option value="">Select…</option>
+          {% for g in ["AA","AS","SS","AC"] %}
+          <option {{ "selected" if patient.genotype == g }}>{{ g }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field full">
+        <label for="allergies">Allergies</label>
+        <input type="text" id="allergies" name="allergies" value="{{ patient.allergies or '' }}">
+      </div>
+      <div class="field full">
+        <label for="chronic_conditions">Chronic conditions</label>
+        <input type="text" id="chronic_conditions" name="chronic_conditions" value="{{ patient.chronic_conditions or '' }}">
+      </div>
+      <div class="field full">
+        <label for="medical_history">Medical history</label>
+        <textarea id="medical_history" name="medical_history">{{ patient.medical_history or '' }}</textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" type="submit">Save changes</button>
+      <a class="btn btn-ghost" href="{{ url_for('view_patient', patient_code=patient.patient_code) if for_doctor else url_for('patient_dashboard') }}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
