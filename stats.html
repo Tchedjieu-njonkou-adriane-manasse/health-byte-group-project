@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Site Stats — HealthByte{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="card" style="max-width:640px; margin:0 auto;">
+    <h1>Site Statistics</h1>
+    <p class="auth-sub">Total visits: <strong>{{ total_visits }}</strong></p>
+
+    <h2 style="margin-top:24px;">Visits by page</h2>
+    <table style="width:100%; border-collapse:collapse; margin-top:12px;">
+      <thead>
+        <tr>
+          <th style="text-align:left; padding:8px; border-bottom:1px solid #eee;">Page</th>
+          <th style="text-align:right; padding:8px; border-bottom:1px solid #eee;">Visits</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in unique_pages %}
+        <tr>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{ row.path }}</td>
+          <td style="padding:8px; border-bottom:1px solid #eee; text-align:right;">{{ row.count }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

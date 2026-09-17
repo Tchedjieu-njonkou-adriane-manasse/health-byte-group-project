@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}All Users — HealthByte{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="card" style="max-width:800px; margin:0 auto;">
+    <h1>Registered Users</h1>
+    <p class="auth-sub">Total: <strong>{{ users|length }}</strong></p>
+
+    <table style="width:100%; border-collapse:collapse; margin-top:16px;">
+      <thead>
+        <tr>
+          <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Name</th>
+          <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Email</th>
+          <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Role</th>
+          <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Joined</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{ user.full_name }}</td>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{ user.email }}</td>
+          <td style="padding:8px; border-bottom:1px solid #eee; text-transform:capitalize;">{{ user.role }}</td>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{ user.created_at }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
