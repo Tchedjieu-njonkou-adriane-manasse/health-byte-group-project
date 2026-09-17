@@ -43,6 +43,4 @@ def send_reset_email(app, to_email, code):
             server.sendmail(app.config["MAIL_DEFAULT_SENDER"], [to_email], msg.as_string())
         return True
     except Exception:
-        #It Doesn't crash the request if the mail server rejects us; the route
-        # falls back to showing us the link on screen.
         return False
