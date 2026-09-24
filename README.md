@@ -2,7 +2,7 @@
 
 HealthByte is a digital medical record platform where each patient keeps **one lifelong record** instead of scattered paper files at every hospital they visit. Doctors can search for any patient, but a record only becomes visible once the patient explicitly approves that doctor's access — and can revoke it at any time.
 
-Built as a team course project. This repository covers the full-stack app; the doctor dashboard module was built by Ramson.
+Built as a team course project. This repository covers the full-stack app.
 
 ## Key Features
 
