@@ -127,6 +127,9 @@ p { margin: 0 0 1em; color: var(--ink-soft); }
 
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-3 > .card {
+  margin-top: 22px !important;
+}
 @media (max-width: 760px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
 
 .stat {
