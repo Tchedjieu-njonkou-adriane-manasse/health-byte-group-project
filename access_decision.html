@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Request {{ decision|capitalize }} — HealthByte{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="card" style="max-width:520px; margin:0 auto; text-align:center;">
+    <div class="auth-logo" style="justify-content:center;">
+      <span class="mark">H</span>
+      <span class="word">HEALTHBYTE</span>
+    </div>
+    {% if decision == "approved" %}
+      <h1>Access approved</h1>
+      <p class="auth-sub">You've granted this doctor access to your record. You can revoke it anytime from your dashboard.</p>
+    {% else %}
+      <h1>Access denied</h1>
+      <p class="auth-sub">This doctor's request has been denied. No changes were made to your record.</p>
+    {% endif %}
+    <a class="btn btn-primary" href="{{ url_for('login') }}">Go to login</a>
+  </div>
+</div>
+{% endblock %}
