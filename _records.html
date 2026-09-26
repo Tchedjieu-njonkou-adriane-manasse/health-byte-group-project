@@ -25,7 +25,7 @@
   <div class="card-header"><h2>Prescriptions</h2></div>
   {% if prescriptions %}
   <table>
-    <thead><tr><th>Date</th><th>Doctor</th><th>Medication</th><th>Dosage</th><th>Frequency</th><th>Duration</th></tr></thead>
+    <thead><tr><th>Date</th><th>Doctor</th><th>Medication</th><th>Dosage</th><th>Frequency</th><th>Duration</th><th>Linked Consultation</th></tr></thead>
     <tbody>
       {% for p in prescriptions %}
       <tr>
@@ -35,6 +35,7 @@
         <td>{{ p.dosage or "—" }}</td>
         <td>{{ p.frequency or "—" }}</td>
         <td>{{ p.duration or "—" }}</td>
+        <th>{% if p.linked_visit_date %}{{ p.linked_visit_date }} - {{ p.linked_reason }}{% else %}-{% endif %}</th>
       </tr>
       {% endfor %}
     </tbody>
@@ -63,6 +64,6 @@
   </table>
   {% else %}
   <div class="empty-state">No lab results recorded yet.</div>
-  
+  {% endif %}
 </div>
 {% endmacro %}
