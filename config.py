@@ -10,7 +10,7 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 class Config:
     SECRET_KEY = os.environ.get("HEALTHBYTE_SECRET_KEY", "dev-secret-change-me")
-    DATABASE = os.path.join(BASE_DIR, "instance", "healthbyte.db")
+    DATABASE = os.environ.get("DATA_BASE", os.path.join(BASE_DIR, "instance", "healthbyte.db"))
 
     GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
