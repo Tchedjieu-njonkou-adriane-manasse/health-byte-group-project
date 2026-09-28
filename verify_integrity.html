@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Verify integrity — HealthByte{% endblock %}
+{% block content %}
+<div class="card-header">
+  <h1>Verify integrity</h1>
+  <span class="pill-badge">Patient ID: {{ patient.patient_code }}</span>
+</div>
+
+<div class="ledger-summary {{ 'valid' if overall_valid else 'altered' }}">
+  <div class="ledger-icon">{{ "✅" if overall_valid else "❌" }}</div>
+  <div>
+    <div class="title">{{ "Everything checks out" if overall_valid else "Something doesn't match" }}</div>
+    <div class="sub">
+      {% if overall_valid %}
+        Every update to {{ patient.full_name }}'s record has been checked against what's stored. Nothing has been changed without a trace.
+      {% else %}
+        Something in this record's history doesn't match what's expected. This needs to be looked into before the record can be trusted.
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>History — most recent first</h2></div>
+  {% if blocks %}
+  <ul class="chain">
+    {% for b in blocks %}
+    <li>
+      <div class="chain-block {{ '' if b.valid else 'invalid' }}">
+        <span class="link-dot">{{ "✓" if b.valid else "✕" }}</span>
+        <div class="chain-meta">
+          <span>{{ b.description }}</span>
+          <span class="chain-time">{{ b.timestamp }}</span>
+        </div>
+        <div class="chain-status {{ 'ok' if b.valid else 'bad' }}">{{ "✓ Checked, matches" if b.valid else "✗ Doesn't match" }}</div>
+        <details style="margin-top:8px;">
+          <summary style="cursor:pointer; font-size:0.8rem; color:var(--ink-faint);">Show technical details</summary>
+          <div class="chain-hash" style="margin-top:8px;"><span class="lbl">hash</span>{{ b.block_hash }}</div>
+          <div class="chain-hash"><span class="lbl">prev</span>{{ b.previous_hash }}</div>
+        </details>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty-state">No history yet for this patient.</div>
+  {% endif %}
+</div>
+{% endblock %}
