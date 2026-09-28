@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% from "_records.html" import records_tables %}
+{% block title %}My record — HealthByte{% endblock %}
+{% block content %}
+<div class="card-header">
+  <h1>Hello, {{ patient.full_name.split(' ')[0] }}</h1>
+</div>
+
+{% if pending_requests %}
+<div class="card">
+  <div class="card-header"><h2>Access requests awaiting your approval</h2></div>
+  <table>
+    <thead><tr><th>Doctor</th><th>Specialization</th><th>Requested</th><th></th></tr></thead>
+    <tbody>
+      {% for req in pending_requests %}
+      <tr>
+        <td>{{ req.doctor_name }} <span class="mono" style="color:var(--ink-faint)">({{ req.doctor_code }})</span></td>
+        <td>{{ req.specialization or "—" }}</td>
+        <td class="mono">{{ req.requested_at }}</td>
+        <td>
+          <form method="post" action="{{ url_for('approve_access', request_id=req.id) }}" style="display:inline;">
+            <button class="btn btn-primary btn-sm" type="submit">Approve</button>
+          </form>
+          <form method="post" action="{{ url_for('deny_access', request_id=req.id) }}" style="display:inline;">
+            <button class="btn btn-ghost btn-sm" type="submit">Deny</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header"><h2>Doctors with access to my record</h2></div>
+  {% if approved_doctors %}
+  <table>
+    <thead><tr><th>Doctor</th><th>Specialization</th><th>Approved</th><th></th></tr></thead>
+    <tbody>
+      {% for d in approved_doctors %}
+      <tr>
+        <td>{{ d.doctor_name }} <span class="mono" style="color:var(--ink-faint)">({{ d.doctor_code }})</span></td>
+        <td>{{ d.specialization or "—" }}</td>
+        <td class="mono">{{ d.responded_at }}</td>
+        <td>
+          <form method="post" action="{{ url_for('revoke_access', request_id=d.id) }}" style="display:inline;"
+                onsubmit="return confirm('Revoke this doctor\'s access to your record?');">
+            <button class="btn btn-ghost btn-sm" type="submit">Revoke access</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">No doctors have access to your record yet.</div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>My profile</h2>
+    <div class="btn-row">
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('patient_edit_profile') }}">Edit profile</a>
+      <a class="btn btn-amber btn-sm" href="{{ url_for('verify_integrity', patient_code=patient.patient_code) }}">Verify integrity</a>
+    </div>
+  </div>
+  <div class="grid-3" style="margin-bottom:16px;">
+    <div class="stat"><div class="label">Patient ID</div><div class="value">{{ patient.patient_code }}</div></div>
+    <div class="stat"><div class="label">Blood group</div><div class="value">{{ patient.blood_group or "—" }}</div></div>
+    <div class="stat"><div class="label">Genotype</div><div class="value">{{ patient.genotype or "—" }}</div></div>
+  </div>
+  <div class="field-list">
+    <div class="field-row"><div class="k">Date of birth</div><div class="v">{{ patient.date_of_birth or "—" }}</div></div>
+    <div class="field-row"><div class="k">Sex</div><div class="v">{{ patient.sex or "—" }}</div></div>
+    <div class="field-row"><div class="k">Contact info</div><div class="v">{{ patient.contact_info or "—" }}</div></div>
+    <div class="field-row"><div class="k">Address</div><div class="v">{{ patient.address or "—" }}</div></div>
+    <div class="field-row"><div class="k">Emergency contact</div><div class="v">{{ patient.emergency_contact_name or "—" }}{% if patient.emergency_contact_phone %} · {{ patient.emergency_contact_phone }}{% endif %}</div></div>
+    <div class="field-row"><div class="k">Allergies</div><div class="v">{{ patient.allergies or "—" }}</div></div>
+    <div class="field-row"><div class="k">Chronic conditions</div><div class="v">{{ patient.chronic_conditions or "—" }}</div></div>
+    <div class="field-row"><div class="k">Medical history</div><div class="v">{{ patient.medical_history or "—" }}</div></div>
+  </div>
+</div>
+
+{{ records_tables(consultations, prescriptions, labs) }}
+{% endblock %}
