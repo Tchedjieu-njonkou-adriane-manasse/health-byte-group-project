@@ -230,3 +230,19 @@ def forgot_password():
         return redirect(url_for("reset_password"))
 
     return render_template("forgot_password.html")
+
+
+@app.route("/reset-password", methods=("GET", "POST"))
+def reset_password():
+    email = session.get("reset_email")
+    if not email:
+        flash("Please request a reset code first.", "error")
+        return redirect(url_for("forgot_password"))
+
+    if request.method == "POST":
+        code = request.form.get("code", "").strip()
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm_password", "")
+
+        db = database.get_db()
+        user = db.execute("SELECT * FROM users WHERE email = ? AND reset_token = ?", (email, code)).fetchone()
