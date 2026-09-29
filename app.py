@@ -360,3 +360,47 @@ def dashboard():
     if g.user["role"] == "patient":
         return redirect(url_for("patient_dashboard"))
     return redirect(url_for("doctor_dashboard"))
+
+
+@app.route("/patient/dashboard")
+@role_required("patient")
+def patient_dashboard():
+    db = database.get_db()
+    patient = g.profile
+    consultations = db.execute(
+        "SELECT c.*, d.full_name AS doctor_name FROM consultations c "
+        "JOIN doctors d ON d.id = c.doctor_id "
+        "WHERE c.patient_id = ? ORDER BY c.visit_date DESC", (patient["id"],)
+    ).fetchall()
+    prescriptions = db.execute(
+    "SELECT p.*, d.full_name AS doctor_name, "
+    "c.visit_date AS linked_visit_date, c.reason AS linked_reason "
+    "FROM prescriptions p "
+    "JOIN doctors d ON d.id = p.doctor_id "
+    "LEFT JOIN consultations c ON c.id = p.consultation_id "
+    "WHERE p.patient_id = ? ORDER BY p.date_prescribed DESC", (patient["id"],)
+    ).fetchall()
+    labs = db.execute(
+        "SELECT l.*, d.full_name AS doctor_name FROM lab_results l "
+        "JOIN doctors d ON d.id = l.doctor_id "
+        "WHERE l.patient_id = ? ORDER BY l.test_date DESC", (patient["id"],)
+    ).fetchall()
+
+    pending_requests = db.execute(
+        "SELECT ar.*, d.full_name AS doctor_name, d.specialization, d.doctor_code "
+        "FROM access_requests ar JOIN doctors d ON d.id = ar.doctor_id "
+        "WHERE ar.patient_id = ? AND ar.status = 'pending' ORDER BY ar.requested_at DESC",
+        (patient["id"],)
+    ).fetchall()
+    approved_doctors = db.execute(
+        "SELECT ar.*, d.full_name AS doctor_name, d.specialization, d.doctor_code "
+        "FROM access_requests ar JOIN doctors d ON d.id = ar.doctor_id "
+        "WHERE ar.patient_id = ? AND ar.status = 'approved' ORDER BY d.full_name",
+        (patient["id"],)
+    ).fetchall()
+
+    return render_template(
+        "patient_dashboard.html", patient=patient,
+        consultations=consultations, prescriptions=prescriptions, labs=labs,
+        pending_requests=pending_requests, approved_doctors=approved_doctors
+    )
