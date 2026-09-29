@@ -429,3 +429,28 @@ def approve_access(request_id):
         mailer.send_access_decision_email(app, req["doctor_email"], g.profile["full_name"], "approved")
         flash("Access approved.", "success")
     return redirect(url_for("patient_dashboard"))
+
+
+@app.route("/patient/access/<int:request_id>/deny", methods=("POST",))
+@role_required("patient")
+def deny_access(request_id):
+    db = database.get_db()
+    req = db.execute(
+        "SELECT ar.*, u.email AS doctor_email, d.full_name AS doctor_name "
+        "FROM access_requests ar "
+        "JOIN doctors d ON d.id = ar.doctor_id "
+        "JOIN users u ON u.id = d.user_id "
+        "WHERE ar.id = ? AND ar.patient_id = ?",
+        (request_id, g.profile["id"])
+    ).fetchone()
+    if req is None:
+        flash("Request not found.", "error")
+    else:
+        db.execute(
+            "UPDATE access_requests SET status='denied', responded_at=datetime('now') WHERE id = ?",
+            (request_id,)
+        )
+        db.commit()
+        mailer.send_access_decision_email(app, req["doctor_email"], g.profile["full_name"], "denied")
+        flash("Access denied.", "success")
+    return redirect(url_for("patient_dashboard"))
