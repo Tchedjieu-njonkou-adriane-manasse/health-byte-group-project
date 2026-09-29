@@ -296,3 +296,22 @@ def google_callback():
     email = (profile.get("email") or "").strip().lower()
     google_id = profile.get("sub")
     name = profile.get("name", "")
+
+    if not email or not google_id:
+        flash("Couldn't get your Google account details. Please try again.", "error")
+        return redirect(url_for("login"))
+
+    db = database.get_db()
+    user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+
+    if user is None:
+        session["google_pending"] = {"email": email, "google_id": google_id, "name": name}
+        return redirect(url_for("complete_google_signup"))
+
+    if user["google_id"] is None:
+        db.execute("UPDATE users SET google_id = ? WHERE id = ?", (google_id, user["id"]))
+        db.commit()
+
+    session.clear()
+    session["user_id"] = user["id"]
+    return redirect(url_for("dashboard"))

@@ -99,4 +99,17 @@ CREATE TABLE IF NOT EXISTS lab_results (
     test_date TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now', '+1 hours'))
 );
+
+-- Consent-based access control: a doctor cannot view/edit a patient's
+-- record until the patient approves their request.
+CREATE TABLE IF NOT EXISTS access_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    doctor_id INTEGER NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
+    patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved','denied','revoked')),
+    token TEXT,
+    requested_at TEXT NOT NULL DEFAULT (datetime('now', '+1 hours')),
+    responded_at TEXT,
+    UNIQUE(doctor_id, patient_id)
+);
 """
