@@ -87,4 +87,16 @@ CREATE TABLE IF NOT EXISTS prescriptions (
     date_prescribed TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now', '+1 hours'))
 );
+
+CREATE TABLE IF NOT EXISTS lab_results (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    doctor_id INTEGER NOT NULL REFERENCES doctors(id),
+    test_name TEXT NOT NULL,
+    result_value TEXT,
+    reference_range TEXT,
+    lab_notes TEXT,
+    test_date TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now', '+1 hours'))
+);
 """
