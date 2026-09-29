@@ -536,3 +536,40 @@ def patient_edit_profile():
         return redirect(url_for("patient_dashboard"))
 
     return render_template("edit_patient.html", patient=patient, for_doctor=False)
+
+
+@app.route("/doctor/dashboard")
+@role_required("doctor")
+def doctor_dashboard():
+    db = database.get_db()
+    query = request.args.get("q", "").strip()
+    results = []
+    if query:
+        like = f"%{query}%"
+        rows = db.execute(
+            "SELECT * FROM patients WHERE patient_code LIKE ? OR full_name LIKE ? "
+            "ORDER BY full_name LIMIT 25",
+            (like, like)
+        ).fetchall()
+        for p in rows:
+            results.append({
+                "patient": p,
+                "access_status": _access_status(db, g.profile["id"], p["id"])
+            })
+
+    my_patients = db.execute(
+        "SELECT p.* FROM access_requests ar JOIN patients p ON p.id = ar.patient_id "
+        "WHERE ar.doctor_id = ? AND ar.status = 'approved' ORDER BY p.full_name",
+        (g.profile["id"],)
+    ).fetchall()
+
+    recent = db.execute(
+        "SELECT l.*, p.full_name, p.patient_code FROM ledger l "
+        "JOIN patients p ON p.id = l.patient_id "
+        "WHERE l.actor_id = ? ORDER BY l.id DESC LIMIT 8", (g.user["id"],)
+    ).fetchall()
+
+    return render_template(
+        "doctor_dashboard.html", query=query, results=results,
+        recent=recent, my_patients=my_patients
+    )
