@@ -279,3 +279,10 @@ def login_google():
         return redirect(url_for("login"))
     redirect_uri = url_for("google_callback", _external=True)
     return google_oauth.authorize_redirect(redirect_uri)
+
+
+@app.route("/auth/google/callback")
+def google_callback():
+    if google_oauth is None:
+        flash("Google Sign-In isn't configured on this server yet.", "error")
+        return redirect(url_for("login"))
