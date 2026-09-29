@@ -352,3 +352,11 @@ def logout():
     session.clear()
     flash("You've been logged out.", "success")
     return redirect(url_for("index"))
+
+
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    if g.user["role"] == "patient":
+        return redirect(url_for("patient_dashboard"))
+    return redirect(url_for("doctor_dashboard"))
