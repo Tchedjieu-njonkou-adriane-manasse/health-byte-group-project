@@ -586,3 +586,54 @@ def _get_patient_or_404(patient_code):
         flash("Patient not found.", "error")
         return None
     return patient
+
+
+@app.route("/doctor/patient/<patient_code>/request-access", methods=("POST",))
+@role_required("doctor")
+def request_access(patient_code):
+    db = database.get_db()
+    patient = _get_patient_or_404(patient_code)
+    if patient is None:
+        return redirect(url_for("doctor_dashboard"))
+
+    existing = db.execute(
+        "SELECT * FROM access_requests WHERE doctor_id = ? AND patient_id = ?",
+        (g.profile["id"], patient["id"])
+    ).fetchone()
+
+    if existing is None:
+        db.execute(
+            "INSERT INTO access_requests (doctor_id, patient_id, status) VALUES (?, ?, 'pending')",
+            (g.profile["id"], patient["id"])
+        )
+        db.commit()
+        token = secrets.token_urlsafe(32)
+        db.execute("UPDATE access_requests SET token = ? WHERE doctor_id = ? AND patient_id = ?",
+                   (token, g.profile["id"], patient["id"]))
+        db.commit()
+        approve_url = url_for("respond_to_request_via_email", token=token, decision="approve", _external=True)
+        deny_url = url_for("respond_to_request_via_email", token=token, decision="deny", _external=True)
+        mailer.send_access_request_email(app, patient["email"], g.profile["full_name"], approve_url, deny_url)
+        flash(f"Access request sent to {patient['full_name']}.", "success")
+
+    elif existing["status"] in ("denied", "revoked"):
+        db.execute(
+            "UPDATE access_requests SET status='pending', requested_at=datetime('now'), responded_at=NULL WHERE id = ?",
+            (existing["id"],)
+        )
+        db.commit()
+        token = secrets.token_urlsafe(32)
+        db.execute("UPDATE access_requests SET token = ? WHERE doctor_id = ? AND patient_id = ?",
+                   (token, g.profile["id"], patient["id"]))
+        db.commit()
+        approve_url = url_for("respond_to_request_via_email", token=token, decision="approve", _external=True)
+        deny_url = url_for("respond_to_request_via_email", token=token, decision="deny", _external=True)
+        mailer.send_access_request_email(app, patient["email"], g.profile["full_name"], approve_url, deny_url)
+        flash(f"Access request sent to {patient['full_name']}.", "success")
+
+    elif existing["status"] == "pending":
+        flash("You already have a pending request for this patient.", "error")
+    else:
+        flash("You already have access to this patient's record.", "success")
+
+    return redirect(url_for("doctor_dashboard", q=request.form.get("q", "")))
