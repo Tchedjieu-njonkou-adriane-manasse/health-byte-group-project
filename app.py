@@ -246,3 +246,25 @@ def reset_password():
 
         db = database.get_db()
         user = db.execute("SELECT * FROM users WHERE email = ? AND reset_token = ?", (email, code)).fetchone()
+
+        if user is None:
+            flash("That code is incorrect. Please check it and try again.", "error")
+        else:
+            expires_at = datetime.strptime(user["reset_token_expires_at"], "%Y-%m-%d %H:%M:%S")
+            if datetime.utcnow() > expires_at:
+                flash("That code has expired. Please request a new one.", "error")
+                session.pop("reset_email", None)
+                return redirect(url_for("forgot_password"))
+            elif len(password) < 6:
+                flash("Password must be at least 6 characters.", "error")
+            elif password != confirm:
+                flash("Passwords don't match.", "error")
+            else:
+                db.execute(
+                    "UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expires_at = NULL WHERE id = ?",
+                    (generate_password_hash(password), user["id"])
+                )
+                db.commit()
+                session.pop("reset_email", None)
+                flash("Password updated. Please log in.", "success")
+                return redirect(url_for("login"))
