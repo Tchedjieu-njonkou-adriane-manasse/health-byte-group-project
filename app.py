@@ -345,3 +345,10 @@ def complete_google_signup():
             return redirect(url_for("dashboard"))
 
     return render_template("complete_google_signup.html", pending=pending)
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("You've been logged out.", "success")
+    return redirect(url_for("index"))
