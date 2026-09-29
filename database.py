@@ -112,4 +112,9 @@ CREATE TABLE IF NOT EXISTS access_requests (
     responded_at TEXT,
     UNIQUE(doctor_id, patient_id)
 );
+
+
+CREATE TABLE IF NOT EXISTS ledger (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    patient_id INTEGER NOT NULL,
 """
