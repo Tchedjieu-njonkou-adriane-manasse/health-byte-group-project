@@ -13,3 +13,23 @@ def get_db():
         g.db.row_factory = sqlite3.Row
         g.db.execute("PRAGMA foreign_keys = ON")
     return g.db
+    
+
+def close_db(e=None):
+    db = g.pop("db", None)
+    if db is not None:
+        db.close()
+
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT,                      -- NULL for Google-only accounts
+    google_id TEXT UNIQUE,
+    role TEXT NOT NULL CHECK(role IN ('doctor', 'patient')),
+    reset_token TEXT,
+    reset_token_expires_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now', '+1 hours'))
+);
+"""
