@@ -573,3 +573,16 @@ def doctor_dashboard():
         "doctor_dashboard.html", query=query, results=results,
         recent=recent, my_patients=my_patients
     )
+
+
+def _get_patient_or_404(patient_code):
+    db = database.get_db()
+    patient = db.execute(
+        "SELECT patients.*, users.email AS email FROM patients "
+        "JOIN users ON users.id = patients.user_id "
+        "WHERE patient_code = ?", (patient_code,)
+    ).fetchone()
+    if patient is None:
+        flash("Patient not found.", "error")
+        return None
+    return patient
