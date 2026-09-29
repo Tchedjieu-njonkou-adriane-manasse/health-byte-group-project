@@ -100,8 +100,8 @@ CREATE TABLE IF NOT EXISTS lab_results (
     created_at TEXT NOT NULL DEFAULT (datetime('now', '+1 hours'))
 );
 
--- Consent-based access control: a doctor cannot view/edit a patient's
--- record until the patient approves their request.
+
+
 CREATE TABLE IF NOT EXISTS access_requests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     doctor_id INTEGER NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
