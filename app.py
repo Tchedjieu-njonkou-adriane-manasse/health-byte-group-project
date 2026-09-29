@@ -74,3 +74,11 @@ def _require_patient_access(db, patient):
         flash("You need this patient's approval before you can view or update their record.", "error")
         return False
     return True
+
+
+
+@app.route("/")
+def index():
+    if g.user:
+        return redirect(url_for("dashboard"))
+    return render_template("index.html")
