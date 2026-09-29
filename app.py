@@ -50,3 +50,17 @@ def load_logged_in_user():
                 g.profile = db.execute(
                     "SELECT * FROM doctors WHERE user_id = ?", (g.user["id"],)
                 ).fetchone()
+
+
+@app.context_processor
+def inject_user():
+    return {"current_user": g.get("user"), "current_profile": g.get("profile")}
+
+
+def _access_status(db, doctor_id, patient_id):
+    """Returns 'pending' / 'approved' / 'denied' / 'revoked' / None."""
+    row = db.execute(
+        "SELECT status FROM access_requests WHERE doctor_id = ? AND patient_id = ?",
+        (doctor_id, patient_id)
+    ).fetchone()
+    return row["status"] if row else None
