@@ -270,3 +270,12 @@ def reset_password():
                 return redirect(url_for("login"))
 
     return render_template("reset_password.html", email=email)
+
+
+@app.route("/login/google")
+def login_google():
+    if google_oauth is None:
+        flash("Google Sign-In isn't configured on this server yet.", "error")
+        return redirect(url_for("login"))
+    redirect_uri = url_for("google_callback", _external=True)
+    return google_oauth.authorize_redirect(redirect_uri)
