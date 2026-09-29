@@ -315,3 +315,325 @@ def google_callback():
     session.clear()
     session["user_id"] = user["id"]
     return redirect(url_for("dashboard"))
+
+
+@app.route("/signup/complete-google", methods=("GET", "POST"))
+def complete_google_signup():
+    pending = session.get("google_pending")
+    if not pending:
+        flash("Please sign in with Google again to continue.", "error")
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        role = request.form.get("role")
+        full_name = request.form.get("full_name", "").strip() or pending["name"]
+
+        if role not in ("doctor", "patient"):
+            flash("Choose whether you're signing up as a doctor or a patient.", "error")
+        else:
+            db = database.get_db()
+            cursor = db.execute(
+                "INSERT INTO users (email, password_hash, google_id, role) VALUES (?, NULL, ?, ?)",
+                (pending["email"], pending["google_id"], role)
+            )
+            user_id = cursor.lastrowid
+            _create_profile_for_new_user(db, user_id, role, full_name, request.form)
+            session.pop("google_pending", None)
+            session.clear()
+            session["user_id"] = user_id
+            flash("Account created with Google. Welcome to HealthByte!", "success")
+            return redirect(url_for("dashboard"))
+
+    return render_template("complete_google_signup.html", pending=pending)
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("You've been logged out.", "success")
+    return redirect(url_for("index"))
+
+
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    if g.user["role"] == "patient":
+        return redirect(url_for("patient_dashboard"))
+    return redirect(url_for("doctor_dashboard"))
+
+
+@app.route("/patient/dashboard")
+@role_required("patient")
+def patient_dashboard():
+    db = database.get_db()
+    patient = g.profile
+    consultations = db.execute(
+        "SELECT c.*, d.full_name AS doctor_name FROM consultations c "
+        "JOIN doctors d ON d.id = c.doctor_id "
+        "WHERE c.patient_id = ? ORDER BY c.visit_date DESC", (patient["id"],)
+    ).fetchall()
+    prescriptions = db.execute(
+    "SELECT p.*, d.full_name AS doctor_name, "
+    "c.visit_date AS linked_visit_date, c.reason AS linked_reason "
+    "FROM prescriptions p "
+    "JOIN doctors d ON d.id = p.doctor_id "
+    "LEFT JOIN consultations c ON c.id = p.consultation_id "
+    "WHERE p.patient_id = ? ORDER BY p.date_prescribed DESC", (patient["id"],)
+    ).fetchall()
+    labs = db.execute(
+        "SELECT l.*, d.full_name AS doctor_name FROM lab_results l "
+        "JOIN doctors d ON d.id = l.doctor_id "
+        "WHERE l.patient_id = ? ORDER BY l.test_date DESC", (patient["id"],)
+    ).fetchall()
+
+    pending_requests = db.execute(
+        "SELECT ar.*, d.full_name AS doctor_name, d.specialization, d.doctor_code "
+        "FROM access_requests ar JOIN doctors d ON d.id = ar.doctor_id "
+        "WHERE ar.patient_id = ? AND ar.status = 'pending' ORDER BY ar.requested_at DESC",
+        (patient["id"],)
+    ).fetchall()
+    approved_doctors = db.execute(
+        "SELECT ar.*, d.full_name AS doctor_name, d.specialization, d.doctor_code "
+        "FROM access_requests ar JOIN doctors d ON d.id = ar.doctor_id "
+        "WHERE ar.patient_id = ? AND ar.status = 'approved' ORDER BY d.full_name",
+        (patient["id"],)
+    ).fetchall()
+
+    return render_template(
+        "patient_dashboard.html", patient=patient,
+        consultations=consultations, prescriptions=prescriptions, labs=labs,
+        pending_requests=pending_requests, approved_doctors=approved_doctors
+    )
+
+
+@app.route("/patient/access/<int:request_id>/approve", methods=("POST",))
+@role_required("patient")
+def approve_access(request_id):
+    db = database.get_db()
+    req = db.execute(
+        "SELECT ar.*, u.email AS doctor_email, d.full_name AS doctor_name "
+        "FROM access_requests ar "
+        "JOIN doctors d ON d.id = ar.doctor_id "
+        "JOIN users u ON u.id = d.user_id "
+        "WHERE ar.id = ? AND ar.patient_id = ?",
+        (request_id, g.profile["id"])
+    ).fetchone()
+    if req is None:
+        flash("Request not found.", "error")
+    else:
+        db.execute(
+            "UPDATE access_requests SET status='approved', responded_at=datetime('now') WHERE id = ?",
+            (request_id,)
+        )
+        db.commit()
+        mailer.send_access_decision_email(app, req["doctor_email"], g.profile["full_name"], "approved")
+        flash("Access approved.", "success")
+    return redirect(url_for("patient_dashboard"))
+
+
+@app.route("/patient/access/<int:request_id>/deny", methods=("POST",))
+@role_required("patient")
+def deny_access(request_id):
+    db = database.get_db()
+    req = db.execute(
+        "SELECT ar.*, u.email AS doctor_email, d.full_name AS doctor_name "
+        "FROM access_requests ar "
+        "JOIN doctors d ON d.id = ar.doctor_id "
+        "JOIN users u ON u.id = d.user_id "
+        "WHERE ar.id = ? AND ar.patient_id = ?",
+        (request_id, g.profile["id"])
+    ).fetchone()
+    if req is None:
+        flash("Request not found.", "error")
+    else:
+        db.execute(
+            "UPDATE access_requests SET status='denied', responded_at=datetime('now') WHERE id = ?",
+            (request_id,)
+        )
+        db.commit()
+        mailer.send_access_decision_email(app, req["doctor_email"], g.profile["full_name"], "denied")
+        flash("Access denied.", "success")
+    return redirect(url_for("patient_dashboard"))
+
+@app.route("/access-requests/<token>/<decision>")
+def respond_to_request_via_email(token, decision):
+    if decision not in ("approve", "deny"):
+        return "Invalid link.", 400
+
+    db = database.get_db()
+    req = db.execute("SELECT * FROM access_requests WHERE token = ?", (token,)).fetchone()
+    if req is None:
+        return "This link is invalid or has already been used.", 404
+
+    new_status = "approved" if decision == "approve" else "denied"
+    db.execute(
+        "UPDATE access_requests SET status = ?, responded_at = datetime('now'), token = NULL WHERE id = ?",
+        (new_status, req["id"])
+    )
+    db.commit()
+
+    doctor = db.execute(
+        "SELECT u.email AS doctor_email, d.full_name AS doctor_name FROM doctors d "
+        "JOIN users u ON u.id = d.user_id WHERE d.id = ?", (req["doctor_id"],)
+    ).fetchone()
+    patient = db.execute("SELECT full_name FROM patients WHERE id = ?", (req["patient_id"],)).fetchone()
+    mailer.send_access_decision_email(app, doctor["doctor_email"], patient["full_name"], new_status)
+
+    return render_template("access_decision.html", decision=new_status)
+
+
+@app.route("/patient/access/<int:request_id>/revoke", methods=("POST",))
+@role_required("patient")
+def revoke_access(request_id):
+    db = database.get_db()
+    req = db.execute(
+        "SELECT * FROM access_requests WHERE id = ? AND patient_id = ?",
+        (request_id, g.profile["id"])
+    ).fetchone()
+    if req is None:
+        flash("Request not found.", "error")
+    else:
+        db.execute(
+            "UPDATE access_requests SET status='revoked', responded_at=datetime('now') WHERE id = ?",
+            (request_id,)
+        )
+        db.commit()
+        flash("Access revoked.", "success")
+    return redirect(url_for("patient_dashboard"))
+
+
+@app.route("/patient/profile/edit", methods=("GET", "POST"))
+@role_required("patient")
+def patient_edit_profile():
+    db = database.get_db()
+    patient = g.profile
+
+    if request.method == "POST":
+        fields = ("full_name", "date_of_birth", "sex", "contact_info", "address",
+                  "blood_group", "genotype", "emergency_contact_name",
+                  "emergency_contact_phone", "medical_history", "allergies",
+                  "chronic_conditions")
+        values = {f: (request.form.get(f) or None) for f in fields}
+
+        db.execute(
+            """UPDATE patients SET full_name=:full_name, date_of_birth=:date_of_birth,
+               sex=:sex, contact_info=:contact_info, address=:address,
+               blood_group=:blood_group, genotype=:genotype,
+               emergency_contact_name=:emergency_contact_name,
+               emergency_contact_phone=:emergency_contact_phone,
+               medical_history=:medical_history, allergies=:allergies,
+               chronic_conditions=:chronic_conditions
+               WHERE id = :id""",
+            {**values, "id": patient["id"]}
+        )
+        db.commit()
+        blockchain.add_block(
+            db, patient_id=patient["id"], actor_id=g.user["id"], actor_role="patient",
+            action_type="UPDATE", record_type="patient_profile", record_id=patient["id"],
+            data=values
+        )
+        flash("Profile updated.", "success")
+        return redirect(url_for("patient_dashboard"))
+
+    return render_template("edit_patient.html", patient=patient, for_doctor=False)
+
+
+@app.route("/doctor/dashboard")
+@role_required("doctor")
+def doctor_dashboard():
+    db = database.get_db()
+    query = request.args.get("q", "").strip()
+    results = []
+    if query:
+        like = f"%{query}%"
+        rows = db.execute(
+            "SELECT * FROM patients WHERE patient_code LIKE ? OR full_name LIKE ? "
+            "ORDER BY full_name LIMIT 25",
+            (like, like)
+        ).fetchall()
+        for p in rows:
+            results.append({
+                "patient": p,
+                "access_status": _access_status(db, g.profile["id"], p["id"])
+            })
+
+    my_patients = db.execute(
+        "SELECT p.* FROM access_requests ar JOIN patients p ON p.id = ar.patient_id "
+        "WHERE ar.doctor_id = ? AND ar.status = 'approved' ORDER BY p.full_name",
+        (g.profile["id"],)
+    ).fetchall()
+
+    recent = db.execute(
+        "SELECT l.*, p.full_name, p.patient_code FROM ledger l "
+        "JOIN patients p ON p.id = l.patient_id "
+        "WHERE l.actor_id = ? ORDER BY l.id DESC LIMIT 8", (g.user["id"],)
+    ).fetchall()
+
+    return render_template(
+        "doctor_dashboard.html", query=query, results=results,
+        recent=recent, my_patients=my_patients
+    )
+
+
+def _get_patient_or_404(patient_code):
+    db = database.get_db()
+    patient = db.execute(
+        "SELECT patients.*, users.email AS email FROM patients "
+        "JOIN users ON users.id = patients.user_id "
+        "WHERE patient_code = ?", (patient_code,)
+    ).fetchone()
+    if patient is None:
+        flash("Patient not found.", "error")
+        return None
+    return patient
+
+
+@app.route("/doctor/patient/<patient_code>/request-access", methods=("POST",))
+@role_required("doctor")
+def request_access(patient_code):
+    db = database.get_db()
+    patient = _get_patient_or_404(patient_code)
+    if patient is None:
+        return redirect(url_for("doctor_dashboard"))
+
+    existing = db.execute(
+        "SELECT * FROM access_requests WHERE doctor_id = ? AND patient_id = ?",
+        (g.profile["id"], patient["id"])
+    ).fetchone()
+
+    if existing is None:
+        db.execute(
+            "INSERT INTO access_requests (doctor_id, patient_id, status) VALUES (?, ?, 'pending')",
+            (g.profile["id"], patient["id"])
+        )
+        db.commit()
+        token = secrets.token_urlsafe(32)
+        db.execute("UPDATE access_requests SET token = ? WHERE doctor_id = ? AND patient_id = ?",
+                   (token, g.profile["id"], patient["id"]))
+        db.commit()
+        approve_url = url_for("respond_to_request_via_email", token=token, decision="approve", _external=True)
+        deny_url = url_for("respond_to_request_via_email", token=token, decision="deny", _external=True)
+        mailer.send_access_request_email(app, patient["email"], g.profile["full_name"], approve_url, deny_url)
+        flash(f"Access request sent to {patient['full_name']}.", "success")
+
+    elif existing["status"] in ("denied", "revoked"):
+        db.execute(
+            "UPDATE access_requests SET status='pending', requested_at=datetime('now'), responded_at=NULL WHERE id = ?",
+            (existing["id"],)
+        )
+        db.commit()
+        token = secrets.token_urlsafe(32)
+        db.execute("UPDATE access_requests SET token = ? WHERE doctor_id = ? AND patient_id = ?",
+                   (token, g.profile["id"], patient["id"]))
+        db.commit()
+        approve_url = url_for("respond_to_request_via_email", token=token, decision="approve", _external=True)
+        deny_url = url_for("respond_to_request_via_email", token=token, decision="deny", _external=True)
+        mailer.send_access_request_email(app, patient["email"], g.profile["full_name"], approve_url, deny_url)
+        flash(f"Access request sent to {patient['full_name']}.", "success")
+
+    elif existing["status"] == "pending":
+        flash("You already have a pending request for this patient.", "error")
+    else:
+        flash("You already have access to this patient's record.", "success")
+
+    return redirect(url_for("doctor_dashboard", q=request.form.get("q", "")))
