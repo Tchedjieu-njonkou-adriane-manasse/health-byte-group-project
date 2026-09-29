@@ -120,4 +120,8 @@ CREATE TABLE IF NOT EXISTS ledger (
     actor_id INTEGER NOT NULL,
     actor_role TEXT NOT NULL,
     action_type TEXT NOT NULL,
+    record_type TEXT NOT NULL,     
+    record_id INTEGER NOT NULL,
+    data_hash TEXT NOT NULL,
+
 """
