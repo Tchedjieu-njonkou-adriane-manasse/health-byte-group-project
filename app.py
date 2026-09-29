@@ -64,3 +64,13 @@ def _access_status(db, doctor_id, patient_id):
         (doctor_id, patient_id)
     ).fetchone()
     return row["status"] if row else None
+
+
+def _require_patient_access(db, patient):
+    """Call at the top of any doctor route that touches a specific patient's
+    record. Returns True if allowed to proceed; flashes a message and
+    returns False otherwise."""
+    if _access_status(db, g.profile["id"], patient["id"]) != "approved":
+        flash("You need this patient's approval before you can view or update their record.", "error")
+        return False
+    return True
