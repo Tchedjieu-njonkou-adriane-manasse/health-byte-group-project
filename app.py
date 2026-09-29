@@ -480,3 +480,23 @@ def respond_to_request_via_email(token, decision):
     mailer.send_access_decision_email(app, doctor["doctor_email"], patient["full_name"], new_status)
 
     return render_template("access_decision.html", decision=new_status)
+
+
+@app.route("/patient/access/<int:request_id>/revoke", methods=("POST",))
+@role_required("patient")
+def revoke_access(request_id):
+    db = database.get_db()
+    req = db.execute(
+        "SELECT * FROM access_requests WHERE id = ? AND patient_id = ?",
+        (request_id, g.profile["id"])
+    ).fetchone()
+    if req is None:
+        flash("Request not found.", "error")
+    else:
+        db.execute(
+            "UPDATE access_requests SET status='revoked', responded_at=datetime('now') WHERE id = ?",
+            (request_id,)
+        )
+        db.commit()
+        flash("Access revoked.", "success")
+    return redirect(url_for("patient_dashboard"))
