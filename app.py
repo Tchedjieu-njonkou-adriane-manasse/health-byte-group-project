@@ -82,3 +82,49 @@ def index():
     if g.user:
         return redirect(url_for("dashboard"))
     return render_template("index.html")
+
+
+@app.route("/signup", methods=("GET", "POST"))
+def signup():
+    if g.user:
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        role = request.form.get("role")
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm_password", "")
+        full_name = request.form.get("full_name", "").strip()
+
+        db = database.get_db()
+        error = None
+
+        if role not in ("doctor", "patient"):
+            error = "Choose whether you're signing up as a doctor or a patient."
+        elif not email or not password or not full_name:
+            error = "Email, full name and password are required."
+        elif "@" not in email or "." not in email.split("@")[-1]:
+            error = "Enter a valid email address."
+        elif password != confirm:
+            error = "Passwords don't match."
+        elif len(password) < 6:
+            error = "Password must be at least 6 characters."
+        elif db.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone():
+            error = "An account with that email already exists."
+
+        if error is None:
+            cursor = db.execute(
+                "INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)",
+                (email, generate_password_hash(password), role)
+            )
+            user_id = cursor.lastrowid
+            _create_profile_for_new_user(db, user_id, role, full_name, request.form)
+            code_col = "patient_code" if role == "patient" else "doctor_code"
+            table = "patients" if role == "patient" else "doctors"
+            code = db.execute(f"SELECT {code_col} FROM {table} WHERE user_id = ?", (user_id,)).fetchone()[code_col]
+            flash(f"Account created! Your {'Patient' if role == 'patient' else 'Doctor'} ID is {code}. Please log in.", "success")
+            return redirect(url_for("login"))
+
+        flash(error, "error")
+
+    return render_template("signup.html", google_enabled=google_oauth is not None)
