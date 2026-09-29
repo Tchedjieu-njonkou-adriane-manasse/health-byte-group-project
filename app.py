@@ -286,3 +286,13 @@ def google_callback():
     if google_oauth is None:
         flash("Google Sign-In isn't configured on this server yet.", "error")
         return redirect(url_for("login"))
+
+    token = google_oauth.authorize_access_token()
+    profile = token.get("userinfo")
+    if not profile:
+        resp = google_oauth.get("https://www.googleapis.com/oauth2/v3/userinfo", token=token)
+        profile = resp.json()
+
+    email = (profile.get("email") or "").strip().lower()
+    google_id = profile.get("sub")
+    name = profile.get("name", "")
