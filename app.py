@@ -198,3 +198,35 @@ def login():
             return redirect(url_for("dashboard"))
 
     return render_template("login.html", google_enabled=google_oauth is not None)
+
+
+@app.route("/forgot-password", methods=("GET", "POST"))
+def forgot_password():
+    if g.user:
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        db = database.get_db()
+        user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+
+        if user is not None and user["password_hash"] is not None:
+            code = f"{secrets.randbelow(1000000):06d}"
+            expires_at = (datetime.utcnow() + timedelta(minutes=5)).strftime("%Y-%m-%d %H:%M:%S")
+            db.execute(
+                "UPDATE users SET reset_token = ?, reset_token_expires_at = ? WHERE id = ?",
+                (code, expires_at, user["id"])
+            )
+            db.commit()
+
+            if mailer.send_reset_email(app, email, code):
+                flash(f"We've sent a 6-digit code to {email}. Enter it below.", "success")
+            else:
+                flash(f"Email sending isn't set up yet, so here's your code directly: {code}", "success")
+        else:
+            flash("If that email has an account, we've sent a 6-digit code to it. Enter it below.", "success")
+
+        session["reset_email"] = email
+        return redirect(url_for("reset_password"))
+
+    return render_template("forgot_password.html")
