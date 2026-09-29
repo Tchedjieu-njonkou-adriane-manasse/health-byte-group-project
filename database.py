@@ -117,4 +117,7 @@ CREATE TABLE IF NOT EXISTS access_requests (
 CREATE TABLE IF NOT EXISTS ledger (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     patient_id INTEGER NOT NULL,
+    actor_id INTEGER NOT NULL,
+    actor_role TEXT NOT NULL,
+    action_type TEXT NOT NULL,
 """
