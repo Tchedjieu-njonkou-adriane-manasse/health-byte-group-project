@@ -29,3 +29,24 @@ try:
         google_oauth = None
 except ImportError:
     google_oauth = None
+
+
+@app.before_request
+def load_logged_in_user():
+    user_id = session.get("user_id")
+    if user_id is None:
+        g.user = None
+        g.profile = None
+    else:
+        db = database.get_db()
+        g.user = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        g.profile = None
+        if g.user:
+            if g.user["role"] == "patient":
+                g.profile = db.execute(
+                    "SELECT * FROM patients WHERE user_id = ?", (g.user["id"],)
+                ).fetchone()
+            else:
+                g.profile = db.execute(
+                    "SELECT * FROM doctors WHERE user_id = ?", (g.user["id"],)
+                ).fetchone()
