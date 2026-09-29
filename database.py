@@ -51,4 +51,15 @@ CREATE TABLE IF NOT EXISTS patients (
     chronic_conditions TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now', '+1 hours'))
 );
+
+CREATE TABLE IF NOT EXISTS doctors (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    doctor_code TEXT UNIQUE NOT NULL,        -- e.g. HB-DR-0001
+    full_name TEXT NOT NULL,
+    specialization TEXT,
+    license_number TEXT,
+    contact_info TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now', '+1 hours'))
+);
 """
