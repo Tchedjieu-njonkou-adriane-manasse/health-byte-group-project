@@ -32,4 +32,23 @@ CREATE TABLE IF NOT EXISTS users (
     reset_token_expires_at TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now', '+1 hours'))
 );
+
+CREATE TABLE IF NOT EXISTS patients (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    patient_code TEXT UNIQUE NOT NULL,       -- human-friendly Patient ID e.g. HB-PT-0001
+    full_name TEXT NOT NULL,
+    date_of_birth TEXT,
+    sex TEXT,
+    contact_info TEXT,
+    address TEXT,
+    blood_group TEXT,
+    genotype TEXT,
+    emergency_contact_name TEXT,
+    emergency_contact_phone TEXT,
+    medical_history TEXT,
+    allergies TEXT,
+    chronic_conditions TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now', '+1 hours'))
+);
 """
