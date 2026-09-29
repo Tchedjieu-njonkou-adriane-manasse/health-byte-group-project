@@ -454,3 +454,29 @@ def deny_access(request_id):
         mailer.send_access_decision_email(app, req["doctor_email"], g.profile["full_name"], "denied")
         flash("Access denied.", "success")
     return redirect(url_for("patient_dashboard"))
+
+@app.route("/access-requests/<token>/<decision>")
+def respond_to_request_via_email(token, decision):
+    if decision not in ("approve", "deny"):
+        return "Invalid link.", 400
+
+    db = database.get_db()
+    req = db.execute("SELECT * FROM access_requests WHERE token = ?", (token,)).fetchone()
+    if req is None:
+        return "This link is invalid or has already been used.", 404
+
+    new_status = "approved" if decision == "approve" else "denied"
+    db.execute(
+        "UPDATE access_requests SET status = ?, responded_at = datetime('now'), token = NULL WHERE id = ?",
+        (new_status, req["id"])
+    )
+    db.commit()
+
+    doctor = db.execute(
+        "SELECT u.email AS doctor_email, d.full_name AS doctor_name FROM doctors d "
+        "JOIN users u ON u.id = d.user_id WHERE d.id = ?", (req["doctor_id"],)
+    ).fetchone()
+    patient = db.execute("SELECT full_name FROM patients WHERE id = ?", (req["patient_id"],)).fetchone()
+    mailer.send_access_decision_email(app, doctor["doctor_email"], patient["full_name"], new_status)
+
+    return render_template("access_decision.html", decision=new_status)
