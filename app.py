@@ -128,3 +128,143 @@ def signup():
         flash(error, "error")
 
     return render_template("signup.html", google_enabled=google_oauth is not None)
+
+
+def _create_profile_for_new_user(db, user_id, role, full_name, form):
+    """Shared by the normal signup form and the post-Google onboarding form."""
+    if role == "patient":
+        code = next_code(db, "patients", "patient_code", "HB-PT")
+        db.execute(
+            """INSERT INTO patients
+               (user_id, patient_code, full_name, date_of_birth, sex,
+                contact_info, address, blood_group, genotype,
+                emergency_contact_name, emergency_contact_phone,
+                medical_history, allergies, chronic_conditions)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (user_id, code, full_name,
+             form.get("date_of_birth") or None,
+             form.get("sex") or None,
+             form.get("contact_info") or None,
+             form.get("address") or None,
+             form.get("blood_group") or None,
+             form.get("genotype") or None,
+             form.get("emergency_contact_name") or None,
+             form.get("emergency_contact_phone") or None,
+             form.get("medical_history") or None,
+             form.get("allergies") or None,
+             form.get("chronic_conditions") or None)
+        )
+        new_id = db.execute("SELECT id FROM patients WHERE user_id = ?", (user_id,)).fetchone()["id"]
+        db.commit()
+        blockchain.add_block(
+            db, patient_id=new_id, actor_id=user_id, actor_role="patient",
+            action_type="CREATE", record_type="patient_profile", record_id=new_id,
+            data=dict(form)
+        )
+    else:
+        code = next_code(db, "doctors", "doctor_code", "HB-DR")
+        db.execute(
+            """INSERT INTO doctors
+               (user_id, doctor_code, full_name, specialization, license_number, contact_info)
+               VALUES (?,?,?,?,?,?)""",
+            (user_id, code, full_name,
+             form.get("specialization") or None,
+             form.get("license_number") or None,
+             form.get("contact_info") or None)
+        )
+        db.commit()
+
+
+@app.route("/login", methods=("GET", "POST"))
+def login():
+    if g.user:
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        db = database.get_db()
+        user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+
+        if user is None:
+            flash("Incorrect email or password.", "error")
+        elif user["password_hash"] is None:
+            flash("This account uses Google Sign-In. Use the 'Continue with Google' button below.", "error")
+        elif not check_password_hash(user["password_hash"], password):
+            flash("Incorrect email or password.", "error")
+        else:
+            session.clear()
+            session["user_id"] = user["id"]
+            return redirect(url_for("dashboard"))
+
+    return render_template("login.html", google_enabled=google_oauth is not None)
+
+
+@app.route("/forgot-password", methods=("GET", "POST"))
+def forgot_password():
+    if g.user:
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        db = database.get_db()
+        user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+
+        if user is not None and user["password_hash"] is not None:
+            code = f"{secrets.randbelow(1000000):06d}"
+            expires_at = (datetime.utcnow() + timedelta(minutes=5)).strftime("%Y-%m-%d %H:%M:%S")
+            db.execute(
+                "UPDATE users SET reset_token = ?, reset_token_expires_at = ? WHERE id = ?",
+                (code, expires_at, user["id"])
+            )
+            db.commit()
+
+            if mailer.send_reset_email(app, email, code):
+                flash(f"We've sent a 6-digit code to {email}. Enter it below.", "success")
+            else:
+                flash(f"Email sending isn't set up yet, so here's your code directly: {code}", "success")
+        else:
+            flash("If that email has an account, we've sent a 6-digit code to it. Enter it below.", "success")
+
+        session["reset_email"] = email
+        return redirect(url_for("reset_password"))
+
+    return render_template("forgot_password.html")
+
+
+@app.route("/reset-password", methods=("GET", "POST"))
+def reset_password():
+    email = session.get("reset_email")
+    if not email:
+        flash("Please request a reset code first.", "error")
+        return redirect(url_for("forgot_password"))
+
+    if request.method == "POST":
+        code = request.form.get("code", "").strip()
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm_password", "")
+
+        db = database.get_db()
+        user = db.execute("SELECT * FROM users WHERE email = ? AND reset_token = ?", (email, code)).fetchone()
+
+        if user is None:
+            flash("That code is incorrect. Please check it and try again.", "error")
+        else:
+            expires_at = datetime.strptime(user["reset_token_expires_at"], "%Y-%m-%d %H:%M:%S")
+            if datetime.utcnow() > expires_at:
+                flash("That code has expired. Please request a new one.", "error")
+                session.pop("reset_email", None)
+                return redirect(url_for("forgot_password"))
+            elif len(password) < 6:
+                flash("Password must be at least 6 characters.", "error")
+            elif password != confirm:
+                flash("Passwords don't match.", "error")
+            else:
+                db.execute(
+                    "UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expires_at = NULL WHERE id = ?",
+                    (generate_password_hash(password), user["id"])
+                )
+                db.commit()
+                session.pop("reset_email", None)
+                flash("Password updated. Please log in.", "success")
+                return redirect(url_for("login"))
