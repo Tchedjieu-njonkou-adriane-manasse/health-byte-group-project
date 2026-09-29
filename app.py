@@ -500,3 +500,39 @@ def revoke_access(request_id):
         db.commit()
         flash("Access revoked.", "success")
     return redirect(url_for("patient_dashboard"))
+
+
+@app.route("/patient/profile/edit", methods=("GET", "POST"))
+@role_required("patient")
+def patient_edit_profile():
+    db = database.get_db()
+    patient = g.profile
+
+    if request.method == "POST":
+        fields = ("full_name", "date_of_birth", "sex", "contact_info", "address",
+                  "blood_group", "genotype", "emergency_contact_name",
+                  "emergency_contact_phone", "medical_history", "allergies",
+                  "chronic_conditions")
+        values = {f: (request.form.get(f) or None) for f in fields}
+
+        db.execute(
+            """UPDATE patients SET full_name=:full_name, date_of_birth=:date_of_birth,
+               sex=:sex, contact_info=:contact_info, address=:address,
+               blood_group=:blood_group, genotype=:genotype,
+               emergency_contact_name=:emergency_contact_name,
+               emergency_contact_phone=:emergency_contact_phone,
+               medical_history=:medical_history, allergies=:allergies,
+               chronic_conditions=:chronic_conditions
+               WHERE id = :id""",
+            {**values, "id": patient["id"]}
+        )
+        db.commit()
+        blockchain.add_block(
+            db, patient_id=patient["id"], actor_id=g.user["id"], actor_role="patient",
+            action_type="UPDATE", record_type="patient_profile", record_id=patient["id"],
+            data=values
+        )
+        flash("Profile updated.", "success")
+        return redirect(url_for("patient_dashboard"))
+
+    return render_template("edit_patient.html", patient=patient, for_doctor=False)
