@@ -315,3 +315,33 @@ def google_callback():
     session.clear()
     session["user_id"] = user["id"]
     return redirect(url_for("dashboard"))
+
+
+@app.route("/signup/complete-google", methods=("GET", "POST"))
+def complete_google_signup():
+    pending = session.get("google_pending")
+    if not pending:
+        flash("Please sign in with Google again to continue.", "error")
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        role = request.form.get("role")
+        full_name = request.form.get("full_name", "").strip() or pending["name"]
+
+        if role not in ("doctor", "patient"):
+            flash("Choose whether you're signing up as a doctor or a patient.", "error")
+        else:
+            db = database.get_db()
+            cursor = db.execute(
+                "INSERT INTO users (email, password_hash, google_id, role) VALUES (?, NULL, ?, ?)",
+                (pending["email"], pending["google_id"], role)
+            )
+            user_id = cursor.lastrowid
+            _create_profile_for_new_user(db, user_id, role, full_name, request.form)
+            session.pop("google_pending", None)
+            session.clear()
+            session["user_id"] = user_id
+            flash("Account created with Google. Welcome to HealthByte!", "success")
+            return redirect(url_for("dashboard"))
+
+    return render_template("complete_google_signup.html", pending=pending)
