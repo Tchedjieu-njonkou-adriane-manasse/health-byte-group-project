@@ -268,3 +268,5 @@ def reset_password():
                 session.pop("reset_email", None)
                 flash("Password updated. Please log in.", "success")
                 return redirect(url_for("login"))
+
+    return render_template("reset_password.html", email=email)
