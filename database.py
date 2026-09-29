@@ -73,4 +73,18 @@ CREATE TABLE IF NOT EXISTS consultations (
     notes TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now', '+1 hours'))
 );
+
+CREATE TABLE IF NOT EXISTS prescriptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    doctor_id INTEGER NOT NULL REFERENCES doctors(id),
+    consultation_id INTEGER REFERENCES consultations(id),
+    medication TEXT NOT NULL,
+    dosage TEXT,
+    frequency TEXT,
+    duration TEXT,
+    instructions TEXT,
+    date_prescribed TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now', '+1 hours'))
+);
 """
