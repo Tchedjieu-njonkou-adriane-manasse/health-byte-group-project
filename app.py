@@ -173,3 +173,28 @@ def _create_profile_for_new_user(db, user_id, role, full_name, form):
              form.get("contact_info") or None)
         )
         db.commit()
+
+
+@app.route("/login", methods=("GET", "POST"))
+def login():
+    if g.user:
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        db = database.get_db()
+        user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+
+        if user is None:
+            flash("Incorrect email or password.", "error")
+        elif user["password_hash"] is None:
+            flash("This account uses Google Sign-In. Use the 'Continue with Google' button below.", "error")
+        elif not check_password_hash(user["password_hash"], password):
+            flash("Incorrect email or password.", "error")
+        else:
+            session.clear()
+            session["user_id"] = user["id"]
+            return redirect(url_for("dashboard"))
+
+    return render_template("login.html", google_enabled=google_oauth is not None)
