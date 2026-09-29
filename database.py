@@ -123,5 +123,9 @@ CREATE TABLE IF NOT EXISTS ledger (
     record_type TEXT NOT NULL,     
     record_id INTEGER NOT NULL,
     data_hash TEXT NOT NULL,
+    previous_hash TEXT NOT NULL,
+    block_hash TEXT NOT NULL,
+    timestamp TEXT NOT NULL
+);
 
 """
