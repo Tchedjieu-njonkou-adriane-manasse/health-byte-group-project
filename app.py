@@ -128,3 +128,48 @@ def signup():
         flash(error, "error")
 
     return render_template("signup.html", google_enabled=google_oauth is not None)
+
+
+def _create_profile_for_new_user(db, user_id, role, full_name, form):
+    """Shared by the normal signup form and the post-Google onboarding form."""
+    if role == "patient":
+        code = next_code(db, "patients", "patient_code", "HB-PT")
+        db.execute(
+            """INSERT INTO patients
+               (user_id, patient_code, full_name, date_of_birth, sex,
+                contact_info, address, blood_group, genotype,
+                emergency_contact_name, emergency_contact_phone,
+                medical_history, allergies, chronic_conditions)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (user_id, code, full_name,
+             form.get("date_of_birth") or None,
+             form.get("sex") or None,
+             form.get("contact_info") or None,
+             form.get("address") or None,
+             form.get("blood_group") or None,
+             form.get("genotype") or None,
+             form.get("emergency_contact_name") or None,
+             form.get("emergency_contact_phone") or None,
+             form.get("medical_history") or None,
+             form.get("allergies") or None,
+             form.get("chronic_conditions") or None)
+        )
+        new_id = db.execute("SELECT id FROM patients WHERE user_id = ?", (user_id,)).fetchone()["id"]
+        db.commit()
+        blockchain.add_block(
+            db, patient_id=new_id, actor_id=user_id, actor_role="patient",
+            action_type="CREATE", record_type="patient_profile", record_id=new_id,
+            data=dict(form)
+        )
+    else:
+        code = next_code(db, "doctors", "doctor_code", "HB-DR")
+        db.execute(
+            """INSERT INTO doctors
+               (user_id, doctor_code, full_name, specialization, license_number, contact_info)
+               VALUES (?,?,?,?,?,?)""",
+            (user_id, code, full_name,
+             form.get("specialization") or None,
+             form.get("license_number") or None,
+             form.get("contact_info") or None)
+        )
+        db.commit()
