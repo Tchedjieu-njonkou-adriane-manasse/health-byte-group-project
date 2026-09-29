@@ -62,4 +62,15 @@ CREATE TABLE IF NOT EXISTS doctors (
     contact_info TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now', '+1 hours'))
 );
+
+CREATE TABLE IF NOT EXISTS consultations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    doctor_id INTEGER NOT NULL REFERENCES doctors(id),
+    visit_date TEXT NOT NULL,
+    reason TEXT,
+    diagnosis TEXT,
+    notes TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now', '+1 hours'))
+);
 """
