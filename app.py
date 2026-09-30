@@ -840,3 +840,29 @@ def add_lab_result(patient_code):
 
     return render_template("add_lab_result.html", patient=patient)
 
+
+
+@app.route("/verify/<patient_code>")
+@login_required
+def verify_integrity(patient_code):
+    db = database.get_db()
+    patient = db.execute("SELECT * FROM patients WHERE patient_code = ?", (patient_code,)).fetchone()
+    if patient is None:
+        flash("Patient not found.", "error")
+        return redirect(url_for("dashboard"))
+
+
+    if g.user["role"] == "patient" and g.profile["id"] != patient["id"]:
+        flash("You can only verify your own record.", "error")
+        return redirect(url_for("patient_dashboard"))
+
+    if g.user["role"] == "doctor" and not _require_patient_access(db, patient):
+        return redirect(url_for("doctor_dashboard"))
+
+    overall_valid, blocks = blockchain.verify_chain(db, patient_id=patient["id"])
+    blocks = list(reversed(blocks))  # most recent first
+    for b in blocks:
+        b["description"] = _describe_block(db, b)
+    return render_template(
+        "verify_integrity.html", patient=patient, overall_valid=overall_valid, blocks=blocks
+    )
