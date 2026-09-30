@@ -200,7 +200,7 @@ tr:last-child td { border-bottom: none; }
 }
 .flow-arrow { color: var(--ink-faint); padding: 0 10px; }
 
-/* ---------------------------------------------------------------- ledger (signature element) */
+
 .ledger-summary {
   display: flex; align-items: center; gap: 14px; padding: 18px; border-radius: var(--radius-lg);
   border: 1px solid var(--line); background: var(--surface);

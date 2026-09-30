@@ -906,3 +906,20 @@ def admin_users():
     if g.user["email"] != app.config["ADMIN_EMAIL"]:
         flash("You don't have permission to view this page.", "error")
         return redirect(url_for("dashboard"))
+
+    db = database.get_db()
+    users = db.execute("""
+        SELECT
+           users.id,
+           users.email,
+           users.role,
+           users.created_at,
+           COALESCE(patients.full_name, doctors.full_name) AS full_name
+        FROM users
+        LEFT JOIN patients ON patients.user_id = users.id
+        LEFT JOIN doctors ON doctors.user_id = users.id
+        ORDER BY users.created_at DESC
+    """).fetchall()   
+    return render_template("admin_users.html", users=users)
+if __name__ == "__main__":
+    app.run(debug=True)
