@@ -141,3 +141,7 @@ def init_db():
         """Clear existing data and create fresh tables."""
         init_db()
         click.echo("Initialized the HealthByte database.")
+
+def init_app(app):
+    app.teardown_appcontext(close_db)
+    app.cli.add_command(init_db_command)
