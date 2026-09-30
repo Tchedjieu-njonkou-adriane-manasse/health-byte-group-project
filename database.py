@@ -127,5 +127,10 @@ CREATE TABLE IF NOT EXISTS ledger (
     block_hash TEXT NOT NULL,
     timestamp TEXT NOT NULL
 );
-
 """
+
+
+def init_db():
+    db = get_db()
+    db.executescript(SCHEMA)
+    db.commit()
