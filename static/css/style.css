@@ -250,7 +250,7 @@ footer.site-footer {
 
 
 .auth-wrap {
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh - 63px);
   display: flex; align-items: center; justify-content: center;
   padding: 40px 20px;
 }
