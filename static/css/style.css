@@ -181,7 +181,7 @@ tr:last-child td { border-bottom: none; }
   border: 1px dashed var(--line); border-radius: var(--radius);
 }
 
-/* ---------------------------------------------------------------- hero */
+
 .hero { padding: 64px 0 40px; }
 .hero h1 { font-size: 2.4rem; max-width: 640px; }
 .hero p.lead { font-size: 1.05rem; max-width: 560px; }
