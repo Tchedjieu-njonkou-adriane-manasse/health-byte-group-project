@@ -667,3 +667,8 @@ def view_patient(patient_code):
         "JOIN doctors d ON d.id = l.doctor_id "
         "WHERE l.patient_id = ? ORDER BY l.test_date DESC", (patient["id"],)
     ).fetchall()
+
+    return render_template(
+        "patient_records.html", patient=patient,
+        consultations=consultations, prescriptions=prescriptions, labs=labs
+    )
