@@ -719,8 +719,26 @@ def add_consultation(patient_code):
     if not _require_patient_access(db, patient):
         return redirect(url_for("doctor_dashboard"))
 
-if request.method == "POST":
+    if request.method == "POST":
         visit_date = request.form.get("visit_date")
         reason = request.form.get("reason")
         diagnosis = request.form.get("diagnosis")
         notes = request.form.get("notes")
+
+        if not visit_date or not reason:
+            flash("Visit date and reason are required.", "error")
+        else:
+            cursor = db.execute(
+                """INSERT INTO consultations (patient_id, doctor_id, visit_date, reason, diagnosis, notes)
+                   VALUES (?,?,?,?,?,?)""",
+                (patient["id"], g.profile["id"], visit_date, reason, diagnosis, notes)
+            )
+            db.commit()
+            record_id = cursor.lastrowid
+            blockchain.add_block(
+                db, patient_id=patient["id"], actor_id=g.user["id"], actor_role="doctor",
+                action_type="CREATE", record_type="consultation", record_id=record_id,
+                data={"visit_date": visit_date, "reason": reason, "diagnosis": diagnosis, "notes": notes}
+            )
+            flash("Consultation added.", "success")
+            return redirect(url_for("view_patient", patient_code=patient["patient_code"]))
