@@ -648,3 +648,8 @@ def view_patient(patient_code):
         return redirect(url_for("doctor_dashboard"))
     if not _require_patient_access(db, patient):
         return redirect(url_for("doctor_dashboard"))
+
+    consultations = db.execute(
+        "SELECT c.*, d.full_name AS doctor_name FROM consultations c "
+        "JOIN doctors d ON d.id = c.doctor_id "
+        "WHERE c.patient_id = ? ORDER BY c.visit_date DESC", (patient["id"],)
