@@ -248,7 +248,7 @@ footer.site-footer {
   color: var(--ink-faint); font-size: 0.82rem;
 }
 
-/* ---------------------------------------------------------------- auth pages */
+
 .auth-wrap {
   min-height: calc(100vh - 64px);
   display: flex; align-items: center; justify-content: center;
