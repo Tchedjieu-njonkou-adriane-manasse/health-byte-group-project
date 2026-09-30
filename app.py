@@ -653,3 +653,17 @@ def view_patient(patient_code):
         "SELECT c.*, d.full_name AS doctor_name FROM consultations c "
         "JOIN doctors d ON d.id = c.doctor_id "
         "WHERE c.patient_id = ? ORDER BY c.visit_date DESC", (patient["id"],)
+    ).fetchall()
+    prescriptions = db.execute(
+    "SELECT p.*, d.full_name AS doctor_name, "
+    "c.visit_date AS linked_visit_date, c.reason AS linked_reason "
+    "FROM prescriptions p "
+    "JOIN doctors d ON d.id = p.doctor_id "
+    "LEFT JOIN consultations c ON c.id = p.consultation_id "
+    "WHERE p.patient_id = ? ORDER BY p.date_prescribed DESC", (patient["id"],)
+    ).fetchall()
+    labs = db.execute(
+        "SELECT l.*, d.full_name AS doctor_name FROM lab_results l "
+        "JOIN doctors d ON d.id = l.doctor_id "
+        "WHERE l.patient_id = ? ORDER BY l.test_date DESC", (patient["id"],)
+    ).fetchall()
