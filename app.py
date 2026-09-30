@@ -755,3 +755,8 @@ def add_prescription(patient_code):
         return redirect(url_for("doctor_dashboard"))
     if not _require_patient_access(db, patient):
         return redirect(url_for("doctor_dashboard"))
+
+    consultations = db.execute(
+        "SELECT id, visit_date, reason FROM consultations WHERE patient_id = ? ORDER BY visit_date DESC",
+        (patient["id"],)
+    ).fetchall()
