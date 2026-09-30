@@ -920,3 +920,6 @@ def admin_users():
         LEFT JOIN doctors ON doctors.user_id = users.id
         ORDER BY users.created_at DESC
     """).fetchall()   
+    return render_template("admin_users.html", users=users)
+if __name__ == "__main__":
+    app.run(debug=True)
