@@ -146,7 +146,7 @@ p { margin: 0 0 1em; color: var(--ink-soft); }
 .field-row .v { color: var(--ink); }
 @media (max-width: 600px) { .field-row { grid-template-columns: 1fr; } }
 
-/* ---------------------------------------------------------------- forms */
+
 form { display: grid; gap: 16px; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 700px) { .form-grid { grid-template-columns: 1fr; } }
