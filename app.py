@@ -689,3 +689,19 @@ def edit_patient(patient_code):
         fields = ("blood_group", "genotype", "medical_history", "allergies",
                   "chronic_conditions")
         values = {f: (request.form.get(f) or None) for f in fields}
+
+        db.execute(
+            """UPDATE patients SET blood_group=:blood_group, genotype=:genotype,
+               medical_history=:medical_history, allergies=:allergies,
+               chronic_conditions=:chronic_conditions
+               WHERE id = :id""",
+            {**values, "id": patient["id"]}
+        )
+        db.commit()
+        blockchain.add_block(
+            db, patient_id=patient["id"], actor_id=g.user["id"], actor_role="doctor",
+            action_type="UPDATE", record_type="patient_profile", record_id=patient["id"],
+            data=values
+        )
+        flash("Patient record updated.", "success")
+        return redirect(url_for("view_patient", patient_code=patient["patient_code"]))
