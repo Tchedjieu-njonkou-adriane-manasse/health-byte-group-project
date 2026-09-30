@@ -796,3 +796,47 @@ def add_prescription(patient_code):
             return redirect(url_for("view_patient", patient_code=patient["patient_code"]))
 
     return render_template("add_prescription.html", patient=patient, consultations=consultations)
+
+
+@app.route("/doctor/patient/<patient_code>/lab/add", methods=("GET", "POST"))
+@role_required("doctor")
+def add_lab_result(patient_code):
+    db = database.get_db()
+    patient = _get_patient_or_404(patient_code)
+    if patient is None:
+        return redirect(url_for("doctor_dashboard"))
+    if not _require_patient_access(db, patient):
+        return redirect(url_for("doctor_dashboard"))
+
+    if request.method == "POST":
+        test_name = request.form.get("test_name")
+        test_date = request.form.get("test_date")
+
+        if not test_name or not test_date:
+            flash("Test name and date are required.", "error")
+        else:
+            data = {
+                "test_name": test_name,
+                "result_value": request.form.get("result_value"),
+                "reference_range": request.form.get("reference_range"),
+                "lab_notes": request.form.get("lab_notes"),
+                "test_date": test_date,
+            }
+            cursor = db.execute(
+                """INSERT INTO lab_results
+                   (patient_id, doctor_id, test_name, result_value, reference_range, lab_notes, test_date)
+                   VALUES (?,?,?,?,?,?,?)""",
+                (patient["id"], g.profile["id"], data["test_name"], data["result_value"],
+                 data["reference_range"], data["lab_notes"], data["test_date"])
+            )
+            db.commit()
+            record_id = cursor.lastrowid
+            blockchain.add_block(
+                db, patient_id=patient["id"], actor_id=g.user["id"], actor_role="doctor",
+                action_type="CREATE", record_type="lab_result", record_id=record_id, data=data
+            )
+            flash("Lab result added.", "success")
+            return redirect(url_for("view_patient", patient_code=patient["patient_code"]))
+
+    return render_template("add_lab_result.html", patient=patient)
+
