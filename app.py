@@ -707,3 +707,183 @@ def edit_patient(patient_code):
         return redirect(url_for("view_patient", patient_code=patient["patient_code"]))
 
     return render_template("edit_patient.html", patient=patient, for_doctor=True)
+
+
+@app.route("/doctor/patient/<patient_code>/consultation/add", methods=("GET", "POST"))
+@role_required("doctor")
+def add_consultation(patient_code):
+    db = database.get_db()
+    patient = _get_patient_or_404(patient_code)
+    if patient is None:
+        return redirect(url_for("doctor_dashboard"))
+    if not _require_patient_access(db, patient):
+        return redirect(url_for("doctor_dashboard"))
+
+    if request.method == "POST":
+        visit_date = request.form.get("visit_date")
+        reason = request.form.get("reason")
+        diagnosis = request.form.get("diagnosis")
+        notes = request.form.get("notes")
+
+        if not visit_date or not reason:
+            flash("Visit date and reason are required.", "error")
+        else:
+            cursor = db.execute(
+                """INSERT INTO consultations (patient_id, doctor_id, visit_date, reason, diagnosis, notes)
+                   VALUES (?,?,?,?,?,?)""",
+                (patient["id"], g.profile["id"], visit_date, reason, diagnosis, notes)
+            )
+            db.commit()
+            record_id = cursor.lastrowid
+            blockchain.add_block(
+                db, patient_id=patient["id"], actor_id=g.user["id"], actor_role="doctor",
+                action_type="CREATE", record_type="consultation", record_id=record_id,
+                data={"visit_date": visit_date, "reason": reason, "diagnosis": diagnosis, "notes": notes}
+            )
+            flash("Consultation added.", "success")
+            return redirect(url_for("view_patient", patient_code=patient["patient_code"]))
+
+    return render_template("add_consultation.html", patient=patient)
+
+
+@app.route("/doctor/patient/<patient_code>/prescription/add", methods=("GET", "POST"))
+@role_required("doctor")
+def add_prescription(patient_code):
+    db = database.get_db()
+    patient = _get_patient_or_404(patient_code)
+    if patient is None:
+        return redirect(url_for("doctor_dashboard"))
+    if not _require_patient_access(db, patient):
+        return redirect(url_for("doctor_dashboard"))
+
+    consultations = db.execute(
+        "SELECT id, visit_date, reason FROM consultations WHERE patient_id = ? ORDER BY visit_date DESC",
+        (patient["id"],)
+    ).fetchall()
+
+    if request.method == "POST":
+        medication = request.form.get("medication")
+        date_prescribed = request.form.get("date_prescribed")
+
+        if not medication or not date_prescribed:
+            flash("Medication and date are required.", "error")
+        else:
+            consultation_id = request.form.get("consultation_id") or None
+            data = {
+                "medication": medication,
+                "dosage": request.form.get("dosage"),
+                "frequency": request.form.get("frequency"),
+                "duration": request.form.get("duration"),
+                "instructions": request.form.get("instructions"),
+                "date_prescribed": date_prescribed,
+            }
+            cursor = db.execute(
+                """INSERT INTO prescriptions
+                   (patient_id, doctor_id, consultation_id, medication, dosage,
+                    frequency, duration, instructions, date_prescribed)
+                   VALUES (?,?,?,?,?,?,?,?,?)""",
+                (patient["id"], g.profile["id"], consultation_id, data["medication"],
+                 data["dosage"], data["frequency"], data["duration"],
+                 data["instructions"], data["date_prescribed"])
+            )
+            db.commit()
+            record_id = cursor.lastrowid
+            blockchain.add_block(
+                db, patient_id=patient["id"], actor_id=g.user["id"], actor_role="doctor",
+                action_type="CREATE", record_type="prescription", record_id=record_id, data=data
+            )
+            flash("Prescription added.", "success")
+            return redirect(url_for("view_patient", patient_code=patient["patient_code"]))
+
+    return render_template("add_prescription.html", patient=patient, consultations=consultations)
+
+
+@app.route("/doctor/patient/<patient_code>/lab/add", methods=("GET", "POST"))
+@role_required("doctor")
+def add_lab_result(patient_code):
+    db = database.get_db()
+    patient = _get_patient_or_404(patient_code)
+    if patient is None:
+        return redirect(url_for("doctor_dashboard"))
+    if not _require_patient_access(db, patient):
+        return redirect(url_for("doctor_dashboard"))
+
+    if request.method == "POST":
+        test_name = request.form.get("test_name")
+        test_date = request.form.get("test_date")
+
+        if not test_name or not test_date:
+            flash("Test name and date are required.", "error")
+        else:
+            data = {
+                "test_name": test_name,
+                "result_value": request.form.get("result_value"),
+                "reference_range": request.form.get("reference_range"),
+                "lab_notes": request.form.get("lab_notes"),
+                "test_date": test_date,
+            }
+            cursor = db.execute(
+                """INSERT INTO lab_results
+                   (patient_id, doctor_id, test_name, result_value, reference_range, lab_notes, test_date)
+                   VALUES (?,?,?,?,?,?,?)""",
+                (patient["id"], g.profile["id"], data["test_name"], data["result_value"],
+                 data["reference_range"], data["lab_notes"], data["test_date"])
+            )
+            db.commit()
+            record_id = cursor.lastrowid
+            blockchain.add_block(
+                db, patient_id=patient["id"], actor_id=g.user["id"], actor_role="doctor",
+                action_type="CREATE", record_type="lab_result", record_id=record_id, data=data
+            )
+            flash("Lab result added.", "success")
+            return redirect(url_for("view_patient", patient_code=patient["patient_code"]))
+
+    return render_template("add_lab_result.html", patient=patient)
+
+
+
+@app.route("/verify/<patient_code>")
+@login_required
+def verify_integrity(patient_code):
+    db = database.get_db()
+    patient = db.execute("SELECT * FROM patients WHERE patient_code = ?", (patient_code,)).fetchone()
+    if patient is None:
+        flash("Patient not found.", "error")
+        return redirect(url_for("dashboard"))
+
+
+    if g.user["role"] == "patient" and g.profile["id"] != patient["id"]:
+        flash("You can only verify your own record.", "error")
+        return redirect(url_for("patient_dashboard"))
+
+    if g.user["role"] == "doctor" and not _require_patient_access(db, patient):
+        return redirect(url_for("doctor_dashboard"))
+
+    overall_valid, blocks = blockchain.verify_chain(db, patient_id=patient["id"])
+    blocks = list(reversed(blocks))  # most recent first
+    for b in blocks:
+        b["description"] = _describe_block(db, b)
+    return render_template(
+        "verify_integrity.html", patient=patient, overall_valid=overall_valid, blocks=blocks
+    )
+
+
+def _describe_block(db, block):
+    """Turn a raw ledger block into a plain-English line for the Verify
+    Integrity timeline, e.g. 'Consultation added by Dr. Jane Smith'."""
+    if block["actor_role"] == "doctor":
+        row = db.execute("SELECT full_name FROM doctors WHERE user_id = ?", (block["actor_id"],)).fetchone()
+        actor_name = f"Dr. {row['full_name']}" if row else "a doctor"
+    else:
+        row = db.execute("SELECT full_name FROM patients WHERE user_id = ?", (block["actor_id"],)).fetchone()
+        actor_name = row["full_name"] if row else "the patient"
+
+    labels = {
+        ("CREATE", "patient_profile"): "Account created by",
+        ("UPDATE", "patient_profile"): "Profile updated by",
+        ("CREATE", "consultation"): "Consultation added by",
+        ("CREATE", "prescription"): "Prescription added by",
+        ("CREATE", "lab_result"): "Lab result added by",
+    }
+    action = labels.get((block["action_type"], block["record_type"]), f"{block['record_type'].replace('_', ' ').title()} updated by")
+    return f"{action} {actor_name}"
