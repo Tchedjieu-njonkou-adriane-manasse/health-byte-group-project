@@ -637,3 +637,14 @@ def request_access(patient_code):
         flash("You already have access to this patient's record.", "success")
 
     return redirect(url_for("doctor_dashboard", q=request.form.get("q", "")))
+
+
+@app.route("/doctor/patient/<patient_code>")
+@role_required("doctor")
+def view_patient(patient_code):
+    db = database.get_db()
+    patient = _get_patient_or_404(patient_code)
+    if patient is None:
+        return redirect(url_for("doctor_dashboard"))
+    if not _require_patient_access(db, patient):
+        return redirect(url_for("doctor_dashboard"))
