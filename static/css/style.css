@@ -146,7 +146,7 @@ p { margin: 0 0 1em; color: var(--ink-soft); }
 .field-row .v { color: var(--ink); }
 @media (max-width: 600px) { .field-row { grid-template-columns: 1fr; } }
 
-/* ---------------------------------------------------------------- forms */
+
 form { display: grid; gap: 16px; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 700px) { .form-grid { grid-template-columns: 1fr; } }
@@ -169,7 +169,7 @@ textarea { resize: vertical; min-height: 90px; }
 .role-option input { width: auto; margin-right: 8px; }
 .role-option.active { border-color: var(--teal); background: var(--teal-tint); }
 
-/* ---------------------------------------------------------------- table */
+
 table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); }
 th { color: var(--ink-faint); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }

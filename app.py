@@ -707,14 +707,3 @@ def edit_patient(patient_code):
         return redirect(url_for("view_patient", patient_code=patient["patient_code"]))
 
     return render_template("edit_patient.html", patient=patient, for_doctor=True)
-
-
-@app.route("/doctor/patient/<patient_code>/consultation/add", methods=("GET", "POST"))
-@role_required("doctor")
-def add_consultation(patient_code):
-    db = database.get_db()
-    patient = _get_patient_or_404(patient_code)
-    if patient is None:
-        return redirect(url_for("doctor_dashboard"))
-    if not _require_patient_access(db, patient):
-        return redirect(url_for("doctor_dashboard"))
