@@ -137,3 +137,7 @@ def init_db():
 
 
     @click.command("init-db")
+    def init_db_command():
+        """Clear existing data and create fresh tables."""
+        init_db()
+        click.echo("Initialized the HealthByte database.")
