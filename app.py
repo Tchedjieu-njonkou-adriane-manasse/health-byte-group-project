@@ -760,3 +760,39 @@ def add_prescription(patient_code):
         "SELECT id, visit_date, reason FROM consultations WHERE patient_id = ? ORDER BY visit_date DESC",
         (patient["id"],)
     ).fetchall()
+
+    if request.method == "POST":
+        medication = request.form.get("medication")
+        date_prescribed = request.form.get("date_prescribed")
+
+        if not medication or not date_prescribed:
+            flash("Medication and date are required.", "error")
+        else:
+            consultation_id = request.form.get("consultation_id") or None
+            data = {
+                "medication": medication,
+                "dosage": request.form.get("dosage"),
+                "frequency": request.form.get("frequency"),
+                "duration": request.form.get("duration"),
+                "instructions": request.form.get("instructions"),
+                "date_prescribed": date_prescribed,
+            }
+            cursor = db.execute(
+                """INSERT INTO prescriptions
+                   (patient_id, doctor_id, consultation_id, medication, dosage,
+                    frequency, duration, instructions, date_prescribed)
+                   VALUES (?,?,?,?,?,?,?,?,?)""",
+                (patient["id"], g.profile["id"], consultation_id, data["medication"],
+                 data["dosage"], data["frequency"], data["duration"],
+                 data["instructions"], data["date_prescribed"])
+            )
+            db.commit()
+            record_id = cursor.lastrowid
+            blockchain.add_block(
+                db, patient_id=patient["id"], actor_id=g.user["id"], actor_role="doctor",
+                action_type="CREATE", record_type="prescription", record_id=record_id, data=data
+            )
+            flash("Prescription added.", "success")
+            return redirect(url_for("view_patient", patient_code=patient["patient_code"]))
+
+    return render_template("add_prescription.html", patient=patient, consultations=consultations)
