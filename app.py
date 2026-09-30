@@ -685,3 +685,7 @@ def edit_patient(patient_code):
         return redirect(url_for("doctor_dashboard"))
 
     if request.method == "POST":
+
+        fields = ("blood_group", "genotype", "medical_history", "allergies",
+                  "chronic_conditions")
+        values = {f: (request.form.get(f) or None) for f in fields}
