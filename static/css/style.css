@@ -116,7 +116,7 @@ p { margin: 0 0 1em; color: var(--ink-soft); }
 .btn-sm { padding: 6px 13px; font-size: 0.8rem; }
 .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
 
-/* ---------------------------------------------------------------- cards */
+
 .card {
   background: var(--surface); border: 1px solid var(--line);
   border-radius: var(--radius-lg); padding: 26px 28px; box-shadow: var(--shadow);
