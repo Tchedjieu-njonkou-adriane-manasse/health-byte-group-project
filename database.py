@@ -145,3 +145,7 @@ def init_db():
 def init_app(app):
     app.teardown_appcontext(close_db)
     app.cli.add_command(init_db_command)
+
+    with app.app_context(): 
+        os.makedirs(os.path.dirname(app.config["DATABASE"]), exist_ok=True)
+        init_db()
