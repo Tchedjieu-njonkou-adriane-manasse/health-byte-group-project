@@ -683,3 +683,5 @@ def edit_patient(patient_code):
         return redirect(url_for("doctor_dashboard"))
     if not _require_patient_access(db, patient):
         return redirect(url_for("doctor_dashboard"))
+
+    if request.method == "POST":
