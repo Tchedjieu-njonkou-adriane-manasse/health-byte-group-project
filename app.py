@@ -742,3 +742,5 @@ def add_consultation(patient_code):
             )
             flash("Consultation added.", "success")
             return redirect(url_for("view_patient", patient_code=patient["patient_code"]))
+
+    return render_template("add_consultation.html", patient=patient)
