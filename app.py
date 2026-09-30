@@ -887,3 +887,22 @@ def _describe_block(db, block):
     }
     action = labels.get((block["action_type"], block["record_type"]), f"{block['record_type'].replace('_', ' ').title()} updated by")
     return f"{action} {actor_name}"
+
+@app.route("/stats")
+@login_required
+def stats():
+    if g.user["email"] != app.config["ADMIN_EMAIL"]:
+        flash("You don't have permission to view this page.", "error")
+        return redirect(url_for("dashboard"))
+    
+    db = database.get_db()
+    total_visits = db.execute("SELECT COUNT(*) AS count FROM visits").fetchone()["count"]
+    unique_pages = db.execute("SELECT path, COUNT(*) AS count FROM visits GROUP BY path ORDER BY count DESC").fetchall()
+    return render_template("stats.html", total_visits=total_visits, unique_pages=unique_pages)
+
+@app.route("/admin/users")
+@login_required
+def admin_users():
+    if g.user["email"] != app.config["ADMIN_EMAIL"]:
+        flash("You don't have permission to view this page.", "error")
+        return redirect(url_for("dashboard"))
