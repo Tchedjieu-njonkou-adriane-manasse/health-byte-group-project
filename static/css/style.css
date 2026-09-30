@@ -99,7 +99,7 @@ p { margin: 0 0 1em; color: var(--ink-soft); }
 .flash-success { background: var(--green-tint); color: #175E3C; border-color: #BFE3CE; }
 .flash-error { background: var(--red-tint); color: #8F3308; border-color: #F0C4AC; }
 
-/* ---------------------------------------------------------------- buttons */
+
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px; 
   font-family: var(--font-ui); font-size: 0.9rem; font-weight: 600;
