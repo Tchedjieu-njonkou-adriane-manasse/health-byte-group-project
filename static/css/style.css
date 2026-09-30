@@ -169,13 +169,13 @@ textarea { resize: vertical; min-height: 90px; }
 .role-option input { width: auto; margin-right: 8px; }
 .role-option.active { border-color: var(--teal); background: var(--teal-tint); }
 
-/* ---------------------------------------------------------------- table */
+
 table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); }
 th { color: var(--ink-faint); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
 tr:last-child td { border-bottom: none; }
 
-/* ---------------------------------------------------------------- empty */
+
 .empty-state {
   text-align: center; padding: 32px 16px; color: var(--ink-faint);
   border: 1px dashed var(--line); border-radius: var(--radius);
