@@ -705,3 +705,5 @@ def edit_patient(patient_code):
         )
         flash("Patient record updated.", "success")
         return redirect(url_for("view_patient", patient_code=patient["patient_code"]))
+
+    return render_template("edit_patient.html", patient=patient, for_doctor=True)
