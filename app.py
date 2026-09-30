@@ -718,3 +718,9 @@ def add_consultation(patient_code):
         return redirect(url_for("doctor_dashboard"))
     if not _require_patient_access(db, patient):
         return redirect(url_for("doctor_dashboard"))
+
+if request.method == "POST":
+        visit_date = request.form.get("visit_date")
+        reason = request.form.get("reason")
+        diagnosis = request.form.get("diagnosis")
+        notes = request.form.get("notes")
