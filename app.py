@@ -866,3 +866,24 @@ def verify_integrity(patient_code):
     return render_template(
         "verify_integrity.html", patient=patient, overall_valid=overall_valid, blocks=blocks
     )
+
+
+def _describe_block(db, block):
+    """Turn a raw ledger block into a plain-English line for the Verify
+    Integrity timeline, e.g. 'Consultation added by Dr. Jane Smith'."""
+    if block["actor_role"] == "doctor":
+        row = db.execute("SELECT full_name FROM doctors WHERE user_id = ?", (block["actor_id"],)).fetchone()
+        actor_name = f"Dr. {row['full_name']}" if row else "a doctor"
+    else:
+        row = db.execute("SELECT full_name FROM patients WHERE user_id = ?", (block["actor_id"],)).fetchone()
+        actor_name = row["full_name"] if row else "the patient"
+
+    labels = {
+        ("CREATE", "patient_profile"): "Account created by",
+        ("UPDATE", "patient_profile"): "Profile updated by",
+        ("CREATE", "consultation"): "Consultation added by",
+        ("CREATE", "prescription"): "Prescription added by",
+        ("CREATE", "lab_result"): "Lab result added by",
+    }
+    action = labels.get((block["action_type"], block["record_type"]), f"{block['record_type'].replace('_', ' ').title()} updated by")
+    return f"{action} {actor_name}"
