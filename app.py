@@ -672,3 +672,14 @@ def view_patient(patient_code):
         "patient_records.html", patient=patient,
         consultations=consultations, prescriptions=prescriptions, labs=labs
     )
+
+
+@app.route("/doctor/patient/<patient_code>/edit", methods=("GET", "POST"))
+@role_required("doctor")
+def edit_patient(patient_code):
+    db = database.get_db()
+    patient = _get_patient_or_404(patient_code)
+    if patient is None:
+        return redirect(url_for("doctor_dashboard"))
+    if not _require_patient_access(db, patient):
+        return redirect(url_for("doctor_dashboard"))
