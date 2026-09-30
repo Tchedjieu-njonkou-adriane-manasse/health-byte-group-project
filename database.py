@@ -134,3 +134,6 @@ def init_db():
     db = get_db()
     db.executescript(SCHEMA)
     db.commit()
+
+
+    @click.command("init-db")
