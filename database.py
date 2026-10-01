@@ -25,7 +25,7 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE NOT NULL,
-    password_hash TEXT,                      -- NULL for Google-only accounts
+    password_hash TEXT,                      
     google_id TEXT UNIQUE,
     role TEXT NOT NULL CHECK(role IN ('doctor', 'patient')),
     reset_token TEXT,
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS patients (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-    patient_code TEXT UNIQUE NOT NULL,       -- human-friendly Patient ID e.g. HB-PT-0001
+    patient_code TEXT UNIQUE NOT NULL,       
     full_name TEXT NOT NULL,
     date_of_birth TEXT,
     sex TEXT,
@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS patients (
 CREATE TABLE IF NOT EXISTS doctors (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-    doctor_code TEXT UNIQUE NOT NULL,        -- e.g. HB-DR-0001
+    doctor_code TEXT UNIQUE NOT NULL,        
     full_name TEXT NOT NULL,
     specialization TEXT,
     license_number TEXT,
