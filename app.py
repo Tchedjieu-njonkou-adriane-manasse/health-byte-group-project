@@ -52,6 +52,15 @@ def load_logged_in_user():
                 ).fetchone()
 
 
+@app.before_request
+def log_visit():
+    if request.path.startswith("/static"):
+        return
+    db = database.get_db()
+    db.execute("INSERT INTO visits (path) VALUES (?)", (request.path,))
+    db.commit()
+
+
 @app.context_processor
 def inject_user():
     return {"current_user": g.get("user"), "current_profile": g.get("profile")}
