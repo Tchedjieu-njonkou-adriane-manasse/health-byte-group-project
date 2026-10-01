@@ -1,3 +1,4 @@
+import os
 import os 
 import sqlite3
 import click
@@ -142,11 +143,11 @@ def init_db():
     db.commit()
 
 
-    @click.command("init-db")
-    def init_db_command():
-        """Clear existing data and create fresh tables."""
-        init_db()
-        click.echo("Initialized the HealthByte database.")
+@click.command("init-db")
+def init_db_command():
+    """Clear existing data and create fresh tables."""
+    init_db()
+    click.echo("Initialized the HealthByte database.")
 
 
 def init_app(app):
