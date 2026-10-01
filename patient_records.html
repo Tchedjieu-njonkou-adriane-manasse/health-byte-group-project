@@ -3,7 +3,7 @@
 {% block title %}{{ patient.full_name }} — HealthByte{% endblock %}
 {% block content %}
 <div class="card-header">
-  <h1>{{ patient.full_name }}</h1>
+  <h1>{{ patient.full_name.split(' ')[0] }}'s records</h1>
   <div class="btn-row">
     <a class="btn btn-ghost btn-sm" href="{{ url_for('doctor_dashboard') }}">← Back to search</a>
     <a class="btn btn-amber btn-sm" href="{{ url_for('verify_integrity', patient_code=patient.patient_code) }}">Verify integrity</a>
