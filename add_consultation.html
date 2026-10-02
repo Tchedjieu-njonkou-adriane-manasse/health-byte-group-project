@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Add consultation — HealthByte{% endblock %}
+{% block content %}
+<div class="card" style="max-width:640px; margin:0 auto;">
+  <div class="card-header">
+    <h2>Add consultation</h2>
+    <span class="pill-badge">{{ patient.patient_code }} · {{ patient.full_name }}</span>
+  </div>
+  <form method="post">
+    <div class="form-grid">
+      <div class="field">
+        <label for="visit_date">Visit date</label>
+        <input type="date" id="visit_date" name="visit_date" required>
+      </div>
+      <div class="field">
+        <label for="reason">Reason for visit</label>
+        <input type="text" id="reason" name="reason" required>
+      </div>
+      <div class="field full">
+        <label for="diagnosis">Diagnosis</label>
+        <input type="text" id="diagnosis" name="diagnosis">
+      </div>
+      <div class="field full">
+        <label for="notes">Notes</label>
+        <textarea id="notes" name="notes"></textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" type="submit">Save consultation</button>
+      <a class="btn btn-ghost" href="{{ url_for('view_patient', patient_code=patient.patient_code) }}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
