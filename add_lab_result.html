@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Add lab result — HealthByte{% endblock %}
+{% block content %}
+<div class="card" style="max-width:640px; margin:0 auto;">
+  <div class="card-header">
+    <h2>Add laboratory result</h2>
+    <span class="pill-badge">{{ patient.patient_code }} · {{ patient.full_name }}</span>
+  </div>
+  <form method="post">
+    <div class="form-grid">
+      <div class="field">
+        <label for="test_name">Test name</label>
+        <input type="text" id="test_name" name="test_name" required placeholder="e.g. Full Blood Count">
+      </div>
+      <div class="field">
+        <label for="test_date">Test date</label>
+        <input type="date" id="test_date" name="test_date" required>
+      </div>
+      <div class="field">
+        <label for="result_value">Result</label>
+        <input type="text" id="result_value" name="result_value" placeholder="e.g. 13.2 g/dL">
+      </div>
+      <div class="field">
+        <label for="reference_range">Reference range</label>
+        <input type="text" id="reference_range" name="reference_range" placeholder="e.g. 12.0–15.5 g/dL">
+      </div>
+      <div class="field full">
+        <label for="lab_notes">Notes</label>
+        <textarea id="lab_notes" name="lab_notes"></textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" type="submit">Save result</button>
+      <a class="btn btn-ghost" href="{{ url_for('view_patient', patient_code=patient.patient_code) }}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
