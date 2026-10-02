@@ -9,7 +9,7 @@ import mailer
 import config
 from auth import login_required, role_required, next_code
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=".")
 app.config.from_object(config.Config)
 app.secret_key = config.SECRET_KEY
 database.init_app(app)
