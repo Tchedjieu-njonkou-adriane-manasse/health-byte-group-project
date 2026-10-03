@@ -9,6 +9,7 @@
 {% if pending_requests %}
 <div class="card">
   <div class="card-header"><h2>Access requests awaiting your approval</h2></div>
+  <div class="table-scroll">
   <table>
     <thead><tr><th>Doctor</th><th>Specialization</th><th>Requested</th><th></th></tr></thead>
     <tbody>
@@ -17,11 +18,11 @@
         <td>{{ req.doctor_name }} <span class="mono" style="color:var(--ink-faint)">({{ req.doctor_code }})</span></td>
         <td>{{ req.specialization or "—" }}</td>
         <td class="mono">{{ req.requested_at }}</td>
-        <td>
-          <form method="post" action="{{ url_for('approve_access', request_id=req.id) }}" style="display:inline;">
+        <td class="actions-cell">
+          <form method="post" action="{{ url_for('approve_access', request_id=req.id) }}">
             <button class="btn btn-primary btn-sm" type="submit">Approve</button>
           </form>
-          <form method="post" action="{{ url_for('deny_access', request_id=req.id) }}" style="display:inline;">
+          <form method="post" action="{{ url_for('deny_access', request_id=req.id) }}">
             <button class="btn btn-ghost btn-sm" type="submit">Deny</button>
           </form>
         </td>
@@ -29,6 +30,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
 </div>
 {% endif %}
 
