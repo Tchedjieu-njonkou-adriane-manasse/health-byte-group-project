@@ -45,8 +45,8 @@
         <td>{{ d.doctor_name }} <span class="mono" style="color:var(--ink-faint)">({{ d.doctor_code }})</span></td>
         <td>{{ d.specialization or "—" }}</td>
         <td class="mono">{{ d.responded_at }}</td>
-        <td>
-          <form method="post" action="{{ url_for('revoke_access', request_id=d.id) }}" style="display:inline;"
+        <td class="actions-cell">
+          <form method="post" action="{{ url_for('revoke_access', request_id=d.id) }}"
                 onsubmit="return confirm('Revoke this doctor\'s access to your record?');">
             <button class="btn btn-ghost btn-sm" type="submit">Revoke access</button>
           </form>
@@ -55,6 +55,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
   <div class="empty-state">No doctors have access to your record yet.</div>
   {% endif %}
