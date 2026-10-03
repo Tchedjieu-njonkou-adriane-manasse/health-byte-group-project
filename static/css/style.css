@@ -128,6 +128,17 @@ p { margin: 0 0 1em; color: var(--ink-soft); }
 .btn-sm { padding: 6px 13px; font-size: 0.8rem; }
 .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
 
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+.actions-cell { display: flex; gap: 8px; align-items: center; }
+
+@media (max-width: 480px) {
+  .table-scroll table { font-size: 0.85rem; }
+  .table-scroll th, .table-scroll td { padding: 8px 6px; }
+  .actions-cell { flex-direction: column; align-items: stretch; }
+  .actions-cell .btn { width: 100%; }
+}
+
 
 .card {
   background: var(--surface); border: 1px solid var(--line);
